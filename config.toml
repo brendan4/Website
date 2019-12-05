@@ -1,4 +1,4 @@
-baseurl = "https://example.com/"
+baseurl = "https://jovial-archimedes.netlify.com/"
 languageCode = "en-US"
 title = "Brendan"
 # Enable comments by entering your Disqus shortname
@@ -20,8 +20,8 @@ theme = "hugo-sustain"
   custom_js  = []
 
 [params.social]
-  Github        = "username"
-  Email         = "email@example.com"
+  Github        = "brendan4"
+  Email         = "brendan.panici@utexas.edu"
   Twitter       = "username"
   LinkedIn      = "username"
   Stackoverflow = "username"
