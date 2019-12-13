@@ -12,8 +12,8 @@ theme = "hugo-sustain"
 
 [params]
   avatar = "cat.png"
-  author = "Brendan"
-  description = "Describe your website"
+  author = "Brendan Panici"
+  description = "A simple website for things I find interesting."
 
   # Custom assets can be linked with their paths relative to static/
   custom_css = []
@@ -22,11 +22,7 @@ theme = "hugo-sustain"
 [params.social]
   Github        = "brendan4"
   Email         = "brendan.panici@utexas.edu"
-  Twitter       = "username"
-  LinkedIn      = "username"
-  Stackoverflow = "username"
   Medium        = "username"
-  Telegram      = "username"
 
 ## Main Menu
 [[menu.main]]
