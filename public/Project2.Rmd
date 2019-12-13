@@ -1,0 +1,243 @@
+---
+title: "Project2"
+output:
+  html_document: default
+  pdf_document: default
+---
+*Brendan Panici*
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+The thoracic surgery dataset contains a 17 descriptors for patients that underwent lung surgery for cancer in Poland between 2007 and 2011. There are 3 numeric variable forced vital capacity (FVC)(the total amount of air exhaled during the FEV test), FEV1 (the amount of air you can force from your lungs in one second), and age. The data set also contains 11 binary variables of which most are secondary phenotypes, such as smoking status. One of the more important is Risk1Y and indicates if the patient survived 1 year after the surgery. Additionally, three categorical varibles are present. This includes diagnosis (7 levels), zubrod scale for cancer patient status (3 levels), and TNM for original tumor size (4 levels).
+
+```{r}
+library(foreign)
+library(plotROC)
+library(glmnet)
+library(tidyverse)
+library(sandwich)
+library(lmtest)
+library(glmnet)
+library(vegan)
+library(varhandle)
+
+thor_surg <- read.arff("https://archive.ics.uci.edu/ml/machine-learning-databases/00277/ThoraricSurgery.arff")
+
+tor_names <- c("Diag","FVC","FEV1","Zubrod", "Pain_before_surg", "Haemo_before_surg", "Dyspnoea_before_surg", "Cough_before_surg", 
+               "Weakness_before_surg", "TNM", "Type_2_DM", "MI", "PAD", "Smoking", "Asthma", "Age", "Risk1Y")
+colnames(thor_surg) <- tor_names
+
+```
+
+## Manova
+
+```{r}
+#manova
+man <- manova(cbind(Age, FVC, FEV1)~Zubrod, data = thor_surg)
+summary(man)
+
+#anova for each response variable 
+summary.aov(man)
+
+#posthoc test from each anova
+pairwise.t.test(thor_surg$FVC,thor_surg$Zubrod, p.adj="none")
+pairwise.t.test(thor_surg$FEV1,thor_surg$Zubrod, p.adj="none")
+pairwise.t.test(thor_surg$Age,thor_surg$Zubrod, p.adj="none")
+
+#type one error prob
+1 - 0.95^13
+#Bonferroni correction
+.05/13
+```
+
+A total of 13 test were conducted and therefore the probability of a type 1 error is 0.5. To lower this an adjusted p value is used of 0.004. A MANOVA analysis showed for one of the variables (age, FVC, and FEV1) atleast one Zubrod classification has a significantly different mean from the others (4.96e-07). A ANOVA for each numerical returns age as having atleast one signifcant different Zubrod class (2.081e-07). For age PRZ0-PRZ2 3.1e-08 and PRZ1-PRZ2 2.8e-06 are signifcanlty different from each other. Assumptions are not likely meet as not all numericals likely have normal ditribution and the same variance/covariance.
+
+##RANDOMIZED TEST
+```{r}
+thor_surg %>% group_by(Zubrod) %>%
+  summarize(means = mean(Age)) %>% 
+  filter(Zubrod %in% c("PRZ0", "PRZ2")) %>%
+  summarize(mean_diff = diff(means))
+
+
+rand_dist <- replicate(5000, {
+  rand <- thor_surg %>% mutate(Age = sample(Age))
+  mean(rand[rand$Zubrod=="PRZ0",]$Age)- mean(rand[rand$Zubrod=="PRZ2",]$Age)
+})
+{hist(rand_dist,main = "", ylab="Freq", xlim=c(-13, 13)); abline(v = c(-10.05, 10.05),col="red")}
+mean(rand_dist>10.05)*2
+
+```
+
+The mean difference in age between Zubrod class PRZ0 and PRZ2 was futher investigated by preforming a randomized t-test. The mean difference in age between the groups is 10.05. Ploting the distrubtion of the randomized test shows 10.05 in either direction is at the tail of distrubtions. In fact no randomized test gave a mean difference of 10.05. This suggests the P-value noted in the paired T test for the same variables is correctly low and therfore significant(3.1e-08).
+
+##Linear Model
+
+```{r}
+thor_surg1 <- thor_surg %>% mutate(center_FVC = FVC - mean(FVC), 
+                        center_age = Age - mean(Age))
+
+fit <- lm(center_FVC~ center_age*TNM, data = thor_surg1)
+summary(fit)
+
+
+qplot(x = center_FVC , y = center_age, color = TNM, data = thor_surg1) +
+ stat_smooth(method = "lm", se = FALSE, fullrange = TRUE)
+
+
+```
+
+Controlling for all other variables, the different stages of TMN all have a increased coefficients compared to TNM OC11. Therefore tumors classifed as OC12, OC13, OC14 have a mean difference in mean FEV of 0.14, 0.09, 0.1 repectively compared to OC11. Additionally all interactions between different TNM stages and centered age increase CEV (c_age:TNMOC12 = 0.007, c_age:TNMOC32 =  0.009, c_age:TNMOC14 =  0.05). Contrastingly age has a negative relationship with FEV. For each one increase in age, FEV decreases by 0.03. Altogether, patients with a TNM tumor classification of TNM OC11 and old age are predicted to have lower FVC, a predictor of lung obstruction and prehaps patient outcome. The linear model explains 0.087 % (adjuated R) of the variation in the data, suggesting the model is a poor indicator of FVC.
+
+### Assumptions
+```{r}
+#assumptions
+resids<-fit$residuals; fitvals<-fit$fitted.values
+ggplot()+geom_point(aes(fitvals,resids))+geom_hline(yintercept=0, col="red")
+bptest(fit)
+
+ggplot()+geom_histogram(aes(resids),bins=20)
+ggplot()+geom_qq(aes(sample=resids))+
+  geom_qq_line(aes(sample=resids, color = "red"), show.legend = FALSE)
+ks.test(resids, "pnorm", sd=sd(resids))
+
+```
+
+A Breusch-Pagan test returned a significant p value meaning the data failed heteroskedasticity assumption. A One-sample Kolmogorov-Smirnov test barely passed normallity assumption. Therefore the results above cannot be fully trusted.
+
+### Robust Standard Error
+```{r}
+coeftest(fit, vcov = vcovHC(fit))
+
+```
+
+Using robust standard errors, all of the standard errors increased except for the interaction of OC13 and age. The interaction between OC14 and age is now not significant. However the age still has a signifcant effect on FVC.
+
+
+## Bootstrapped Standard Errors
+```{r}
+samp_distn<-replicate(5000, {
+ boot_dat<-thor_surg1[sample(nrow(thor_surg1),replace=TRUE),]
+ fit<-lm(center_FVC~ center_age*TNM, data=boot_dat)
+ coef(fit)
+})
+
+## Estimated SEs
+samp_distn%>%t%>%as.data.frame%>%summarize_all(sd)
+```
+
+Bootstrapped standard errors increased the standard errors for all variable except the interactions bewteen age and TNM stages when compared to the orginal output. Compared to robust standar errors, the standard errors are roughly the same. The only slightly increased values are in the interaction of age with OC13 and OC14 respectively.
+
+##Logistical Regression
+```{r}
+class_diag<-function(probs,truth){
+ tab<-table(factor(probs>.5,levels=c("FALSE","TRUE")),truth)
+ acc=sum(diag(tab))/sum(tab)
+ sens=tab[2,2]/colSums(tab)[2]
+ spec=tab[1,1]/colSums(tab)[1]
+ ppv=tab[2,2]/rowSums(tab)[2]
+ if(is.numeric(truth)==FALSE & is.logical(truth)==FALSE) truth<-as.numeric(truth)-1
+ #CALCULATE EXACT AUC
+ ord<-order(probs, decreasing=TRUE)
+ probs <- probs[ord]; truth <- truth[ord]
+ TPR=cumsum(truth)/max(1,sum(truth))
+ FPR=cumsum(!truth)/max(1,sum(!truth))
+ dup<-c(probs[-1]>=probs[-length(probs)], FALSE)
+ TPR<-c(0,TPR[!dup],1); FPR<-c(0,FPR[!dup],1)
+ n <- length(TPR)
+ auc<- sum( ((TPR[-1]+TPR[-n])/2) * (FPR[-1]-FPR[-n]) )
+ data.frame(acc,sens,spec,ppv,auc)
+} 
+```
+
+
+```{r}
+fit <- glm(Risk1Y ~ ., data = thor_surg, family = "binomial")
+summary(fit)
+
+prob<-predict(fit,type="response")
+table(predict=as.numeric(prob>.5),truth=thor_surg$Risk1Y)%>%addmargins
+class_diag(prob, thor_surg$Risk1Y)
+
+```
+
+Type 2 debetis status (True), Dysnoea (True), smoking (True), and TNM classifcation of OC14 are signifcant and are associated with a postive increase in logit. Meaning the odds for dieing at 1 year increases if the patient has any of the conditions. The Accuracy of the model is reported at 0.83 which is high and missleading. The model classifys most individuals as survived (457 total). Since these indivduals make the largest portion of the data (400 out of 470) a high accurracy is reported. On the other hand senetivety is low at 0.04, highlighting the models poor classificatio of individuals that actaully died. As expected specficity is high at 0.98 and precision is low as expected (0.23). 
+
+```{r}
+thor_surg2 <- thor_surg
+thor_surg2$Risk1Y <- unfactor(thor_surg2$Risk1Y)
+logit <- predict(fit)
+thor_surg2 <- thor_surg2 %>% mutate(outcome = case_when(Risk1Y == "T" ~ "Died", Risk1Y == "F" ~ "Survived"))
+thor_surg2$outcome <-factor(thor_surg2$outcome, levels=c("Died","Survived"))
+ggplot(thor_surg2,aes(logit, fill=outcome))+geom_density(alpha=.3)+
+  geom_vline(xintercept=0,lty=2)
+
+```
+Plotting logit vs density by outcome reveals a large overlap between individuals that died and those that survived. From the model's prespective these individuals cannot be distinguished.
+
+### ROC curve
+```{R}
+ROCplot<-ggplot(thor_surg2)+geom_roc(aes(d=Risk1Y,m=prob), n.cuts=0) 
+ROCplot
+calc_auc(ROCplot)
+
+```
+The AUC for the model is reported as 0.77, however it is likley that this model is overfitting the data. Applying this model to a outside data would likely not preform wel.
+
+
+### K-fold
+```{R}
+k=10
+data1<-thor_surg[sample(nrow(thor_surg)),]
+folds<-cut(seq(1:nrow(thor_surg)),breaks=k,labels=F)
+diags<-NULL
+
+# 10 fold cross-validation
+for(i in 1:k){
+ train<-data1[folds!=i,]
+ test<-data1[folds==i,]
+ truth<-test$Risk1Y
+ fit<-glm(Risk1Y ~ Age * Zubrod + FVC + Smoking + Type_2_DM + TNM + Dyspnoea_before_surg,data=train,family="binomial")
+ probs<-predict(fit,newdata = test,type="response")
+ diags<-rbind(diags,class_diag(probs,truth))
+}
+apply(diags,2,mean)
+```
+
+A 10 fold cross validation highlights the models overfitting nature and reports a much lower AUC of 0.68 which is poor. Accuracy increased to 0.84 but this is from the exacerbated sensitivity problem of the model. Accordingly senstivity decreased to 0.01 and specifcity increased to 0.98.
+
+
+## Lasso 
+
+```{r}
+fit <- glm(Smoking ~., data = thor_surg, family = "binomial")
+x<- model.matrix(fit)[,-1]
+y <- as.matrix(thor_surg$Risk1Y)
+cv <- cv.glmnet(x, y, family = "binomial")
+
+
+lasso1<-glmnet(x,y,lambda=cv$lambda.1se, family = "binomial")
+coef(lasso1)
+
+k=10
+data1<-thor_surg[sample(nrow(thor_surg)),]
+folds<-cut(seq(1:nrow(thor_surg)),breaks=k,labels=F)
+diags<-NULL
+
+# 10 fold cross-validation
+for(i in 1:k){
+ train<-data1[folds!=i,]
+ test<-data1[folds==i,]
+ truth<-test$Smoking
+ fit<-glm(Smoking ~ Risk1Y, data = train, family="binomial")
+ probs<-predict(fit, newdata = test, type="response")
+ diags<-rbind(diags, class_diag(probs, truth))
+}
+apply(diags, 2, mean)
+
+
+```
+
+After the lasso analysis the only variable retained for smoking is Risk1Y (1 year survival = True). A 10 fold cross validation was preformed with these variables and returned a AUC of 0.54 and an accuracy of 0.5. This is decreased from the model predicting Risk1Y (accuracy of 0.84). This is due to Risk1Y being a poor differentiator of smoking and the model is essentially guessing.  

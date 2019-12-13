@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="Brendan Panici" />
+    <meta name="description" content="A simple website for things I find interesting.">
+    <link rel="shortcut icon" type="image/x-icon" href="/img/favicon.ico">
+    <title>Project2</title>
+    <meta name="generator" content="Hugo 0.60.1" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="/css/main.css" />
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,400,200bold,400old" />
+    
+    <!--[if lt IE 9]>
+			<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+			<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+
+    
+  </head>
+
+  <body>
+    <div id="wrap">
+
+      
+      <nav class="navbar navbar-default">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="/"><i class="fa fa-home"></i></a>
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <div class="navbar-collapse collapse" id="navbar">
+      <ul class="nav navbar-nav navbar-right">
+      
+        
+        <li><a href="/blog/">BLOG</a></li>
+        
+        <li><a href="/projects/">PROJECTS</a></li>
+        
+        <li><a href="/resume/">RESUME</a></li>
+        
+      
+      </ul>
+    </div>
+  </div>
+</nav>
+
+      
+      <div class="container">
+        <div class="blog-post">
+          <h3>
+            <strong><a href="/project2/">Project2</a></strong>
+          </h3>
+        </div>
+        <div class="blog-title">
+          <h4>
+          January 1, 0001
+            &nbsp;&nbsp;
+            
+          </h4>
+        </div>
+        <div class="panel panel-default">
+          <div class="panel-body">
+            <div class="blogpost">
+              
+
+
+<p><em>Brendan Panici</em></p>
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>The thoracic surgery dataset contains a 17 descriptors for patients that underwent lung surgery for cancer in Poland between 2007 and 2011. There are 3 numeric variable forced vital capacity (FVC)(the total amount of air exhaled during the FEV test), FEV1 (the amount of air you can force from your lungs in one second), and age. The data set also contains 11 binary variables of which most are secondary phenotypes, such as smoking status. One of the more important is Risk1Y and indicates if the patient survived 1 year after the surgery. Additionally, three categorical varibles are present. This includes diagnosis (7 levels), zubrod scale for cancer patient status (3 levels), and TNM for original tumor size (4 levels).</p>
+<pre class="r"><code>library(foreign)
+library(plotROC)</code></pre>
+<pre><code>## Loading required package: ggplot2</code></pre>
+<pre class="r"><code>library(glmnet)</code></pre>
+<pre><code>## Loading required package: Matrix</code></pre>
+<pre><code>## Loaded glmnet 3.0-2</code></pre>
+<pre class="r"><code>library(tidyverse)</code></pre>
+<pre><code>## -- Attaching packages ------------------------------------------------------------------------------------------------------------------------------------- tidyverse 1.2.1 --</code></pre>
+<pre><code>## v tibble  2.1.3     v purrr   0.3.2
+## v tidyr   1.0.0     v dplyr   0.8.3
+## v readr   1.3.1     v stringr 1.4.0
+## v tibble  2.1.3     v forcats 0.4.0</code></pre>
+<pre><code>## -- Conflicts ---------------------------------------------------------------------------------------------------------------------------------------- tidyverse_conflicts() --
+## x tidyr::expand() masks Matrix::expand()
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()
+## x tidyr::pack()   masks Matrix::pack()
+## x tidyr::unpack() masks Matrix::unpack()</code></pre>
+<pre class="r"><code>library(sandwich)
+library(lmtest)</code></pre>
+<pre><code>## Loading required package: zoo</code></pre>
+<pre><code>## 
+## Attaching package: &#39;zoo&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:base&#39;:
+## 
+##     as.Date, as.Date.numeric</code></pre>
+<pre class="r"><code>library(glmnet)
+library(vegan)</code></pre>
+<pre><code>## Loading required package: permute</code></pre>
+<pre><code>## Loading required package: lattice</code></pre>
+<pre><code>## This is vegan 2.5-6</code></pre>
+<pre class="r"><code>library(varhandle)
+
+thor_surg &lt;- read.arff(&quot;https://archive.ics.uci.edu/ml/machine-learning-databases/00277/ThoraricSurgery.arff&quot;)
+
+tor_names &lt;- c(&quot;Diag&quot;,&quot;FVC&quot;,&quot;FEV1&quot;,&quot;Zubrod&quot;, &quot;Pain_before_surg&quot;, &quot;Haemo_before_surg&quot;, &quot;Dyspnoea_before_surg&quot;, &quot;Cough_before_surg&quot;, 
+               &quot;Weakness_before_surg&quot;, &quot;TNM&quot;, &quot;Type_2_DM&quot;, &quot;MI&quot;, &quot;PAD&quot;, &quot;Smoking&quot;, &quot;Asthma&quot;, &quot;Age&quot;, &quot;Risk1Y&quot;)
+colnames(thor_surg) &lt;- tor_names</code></pre>
+</div>
+<div id="manova" class="section level2">
+<h2>Manova</h2>
+<pre class="r"><code>#manova
+man &lt;- manova(cbind(Age, FVC, FEV1)~Zubrod, data = thor_surg)
+summary(man)</code></pre>
+<pre><code>##            Df   Pillai approx F num Df den Df   Pr(&gt;F)    
+## Zubrod      2 0.083459   6.7643      6    932 4.96e-07 ***
+## Residuals 467                                             
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<pre class="r"><code>#anova for each response variable 
+summary.aov(man)</code></pre>
+<pre><code>##  Response Age :
+##              Df Sum Sq Mean Sq F value    Pr(&gt;F)    
+## Zubrod        2   2267 1133.59  15.903 2.081e-07 ***
+## Residuals   467  33288   71.28                      
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+##  Response FVC :
+##              Df Sum Sq Mean Sq F value Pr(&gt;F)
+## Zubrod        2   2.96 1.47770   1.954 0.1429
+## Residuals   467 353.17 0.75625               
+## 
+##  Response FEV1 :
+##              Df Sum Sq Mean Sq F value   Pr(&gt;F)   
+## Zubrod        2   1431  715.51  5.2607 0.005504 **
+## Residuals   467  63517  136.01                    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<pre class="r"><code>#posthoc test from each anova
+pairwise.t.test(thor_surg$FVC,thor_surg$Zubrod, p.adj=&quot;none&quot;)</code></pre>
+<pre><code>## 
+##  Pairwise comparisons using t tests with pooled SD 
+## 
+## data:  thor_surg$FVC and thor_surg$Zubrod 
+## 
+##      PRZ0 PRZ1
+## PRZ1 0.11 -   
+## PRZ2 0.11 0.39
+## 
+## P value adjustment method: none</code></pre>
+<pre class="r"><code>pairwise.t.test(thor_surg$FEV1,thor_surg$Zubrod, p.adj=&quot;none&quot;)</code></pre>
+<pre><code>## 
+##  Pairwise comparisons using t tests with pooled SD 
+## 
+## data:  thor_surg$FEV1 and thor_surg$Zubrod 
+## 
+##      PRZ0   PRZ1  
+## PRZ1 0.0023 -     
+## PRZ2 0.0404 0.5683
+## 
+## P value adjustment method: none</code></pre>
+<pre class="r"><code>pairwise.t.test(thor_surg$Age,thor_surg$Zubrod, p.adj=&quot;none&quot;)</code></pre>
+<pre><code>## 
+##  Pairwise comparisons using t tests with pooled SD 
+## 
+## data:  thor_surg$Age and thor_surg$Zubrod 
+## 
+##      PRZ0    PRZ1   
+## PRZ1 0.023   -      
+## PRZ2 3.1e-08 2.8e-06
+## 
+## P value adjustment method: none</code></pre>
+<pre class="r"><code>#type one error prob
+1 - 0.95^13</code></pre>
+<pre><code>## [1] 0.4866579</code></pre>
+<pre class="r"><code>#Bonferroni correction
+.05/13</code></pre>
+<pre><code>## [1] 0.003846154</code></pre>
+<p>A total of 13 test were conducted and therefore the probability of a type 1 error is 0.5. To lower this an adjusted p value is used of 0.004. A MANOVA analysis showed for one of the variables (age, FVC, and FEV1) atleast one Zubrod classification has a significantly different mean from the others (4.96e-07). A ANOVA for each numerical returns age as having atleast one signifcant different Zubrod class (2.081e-07). For age PRZ0-PRZ2 3.1e-08 and PRZ1-PRZ2 2.8e-06 are signifcanlty different from each other. Assumptions are not likely meet as not all numericals likely have normal ditribution and the same variance/covariance.</p>
+</div>
+<div id="randomized-test" class="section level2">
+<h2>RANDOMIZED TEST</h2>
+<pre class="r"><code>thor_surg %&gt;% group_by(Zubrod) %&gt;%
+  summarize(means = mean(Age)) %&gt;% 
+  filter(Zubrod %in% c(&quot;PRZ0&quot;, &quot;PRZ2&quot;)) %&gt;%
+  summarize(mean_diff = diff(means))</code></pre>
+<pre><code>## # A tibble: 1 x 1
+##   mean_diff
+##       &lt;dbl&gt;
+## 1      10.1</code></pre>
+<pre class="r"><code>rand_dist &lt;- replicate(5000, {
+  rand &lt;- thor_surg %&gt;% mutate(Age = sample(Age))
+  mean(rand[rand$Zubrod==&quot;PRZ0&quot;,]$Age)- mean(rand[rand$Zubrod==&quot;PRZ2&quot;,]$Age)
+})
+{hist(rand_dist,main = &quot;&quot;, ylab=&quot;Freq&quot;, xlim=c(-13, 13)); abline(v = c(-10.05, 10.05),col=&quot;red&quot;)}</code></pre>
+<p><img src="/Project2_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<pre class="r"><code>mean(rand_dist&gt;10.05)*2</code></pre>
+<pre><code>## [1] 0</code></pre>
+<p>The mean difference in age between Zubrod class PRZ0 and PRZ2 was futher investigated by preforming a randomized t-test. The mean difference in age between the groups is 10.05. Ploting the distrubtion of the randomized test shows 10.05 in either direction is at the tail of distrubtions. In fact no randomized test gave a mean difference of 10.05. This suggests the P-value noted in the paired T test for the same variables is correctly low and therfore significant(3.1e-08).</p>
+</div>
+<div id="linear-model" class="section level2">
+<h2>Linear Model</h2>
+<pre class="r"><code>thor_surg1 &lt;- thor_surg %&gt;% mutate(center_FVC = FVC - mean(FVC), 
+                        center_age = Age - mean(Age))
+
+fit &lt;- lm(center_FVC~ center_age*TNM, data = thor_surg1)
+summary(fit)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = center_FVC ~ center_age * TNM, data = thor_surg1)
+## 
+## Residuals:
+##      Min       1Q   Median       3Q      Max 
+## -1.92356 -0.63867 -0.03936  0.54237  2.46160 
+## 
+## Coefficients:
+##                     Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)        -0.083691   0.062815  -1.332   0.1834    
+## center_age         -0.036526   0.007115  -5.134  4.2e-07 ***
+## TNMOC12             0.142115   0.081621   1.741   0.0823 .  
+## TNMOC13             0.094959   0.201231   0.472   0.6372    
+## TNMOC14             0.102766   0.216930   0.474   0.6359    
+## center_age:TNMOC12  0.007470   0.009394   0.795   0.4269    
+## center_age:TNMOC13  0.009274   0.024240   0.383   0.7022    
+## center_age:TNMOC14  0.049172   0.020836   2.360   0.0187 *  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 0.8325 on 462 degrees of freedom
+## Multiple R-squared:  0.101,  Adjusted R-squared:  0.08738 
+## F-statistic: 7.415 on 7 and 462 DF,  p-value: 1.846e-08</code></pre>
+<pre class="r"><code>qplot(x = center_FVC , y = center_age, color = TNM, data = thor_surg1) +
+ stat_smooth(method = &quot;lm&quot;, se = FALSE, fullrange = TRUE)</code></pre>
+<p><img src="/Project2_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<p>Controlling for all other variables, the different stages of TMN all have a increased coefficients compared to TNM OC11. Therefore tumors classifed as OC12, OC13, OC14 have a mean difference in mean FEV of 0.14, 0.09, 0.1 repectively compared to OC11. Additionally all interactions between different TNM stages and centered age increase CEV (c_age:TNMOC12 = 0.007, c_age:TNMOC32 = 0.009, c_age:TNMOC14 = 0.05). Contrastingly age has a negative relationship with FEV. For each one increase in age, FEV decreases by 0.03. Altogether, patients with a TNM tumor classification of TNM OC11 and old age are predicted to have lower FVC, a predictor of lung obstruction and prehaps patient outcome. The linear model explains 0.087 % (adjuated R) of the variation in the data, suggesting the model is a poor indicator of FVC.</p>
+<div id="assumptions" class="section level3">
+<h3>Assumptions</h3>
+<pre class="r"><code>#assumptions
+resids&lt;-fit$residuals; fitvals&lt;-fit$fitted.values
+ggplot()+geom_point(aes(fitvals,resids))+geom_hline(yintercept=0, col=&quot;red&quot;)</code></pre>
+<p><img src="/Project2_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<pre class="r"><code>bptest(fit)</code></pre>
+<pre><code>## 
+##  studentized Breusch-Pagan test
+## 
+## data:  fit
+## BP = 22.251, df = 7, p-value = 0.002299</code></pre>
+<pre class="r"><code>ggplot()+geom_histogram(aes(resids),bins=20)</code></pre>
+<p><img src="/Project2_files/figure-html/unnamed-chunk-5-2.png" width="672" /></p>
+<pre class="r"><code>ggplot()+geom_qq(aes(sample=resids))+
+  geom_qq_line(aes(sample=resids, color = &quot;red&quot;), show.legend = FALSE)</code></pre>
+<p><img src="/Project2_files/figure-html/unnamed-chunk-5-3.png" width="672" /></p>
+<pre class="r"><code>ks.test(resids, &quot;pnorm&quot;, sd=sd(resids))</code></pre>
+<pre><code>## Warning in ks.test(resids, &quot;pnorm&quot;, sd = sd(resids)): ties should not be present
+## for the Kolmogorov-Smirnov test</code></pre>
+<pre><code>## 
+##  One-sample Kolmogorov-Smirnov test
+## 
+## data:  resids
+## D = 0.059047, p-value = 0.07545
+## alternative hypothesis: two-sided</code></pre>
+<p>A Breusch-Pagan test returned a significant p value meaning the data failed heteroskedasticity assumption. A One-sample Kolmogorov-Smirnov test barely passed normallity assumption. Therefore the results above cannot be fully trusted.</p>
+</div>
+<div id="robust-standard-error" class="section level3">
+<h3>Robust Standard Error</h3>
+<pre class="r"><code>coeftest(fit, vcov = vcovHC(fit))</code></pre>
+<pre><code>## 
+## t test of coefficients:
+## 
+##                      Estimate Std. Error t value  Pr(&gt;|t|)    
+## (Intercept)        -0.0836906  0.0616904 -1.3566   0.17556    
+## center_age         -0.0365260  0.0080904 -4.5147 8.057e-06 ***
+## TNMOC12             0.1421151  0.0813916  1.7461   0.08146 .  
+## TNMOC13             0.0949594  0.1820770  0.5215   0.60224    
+## TNMOC14             0.1027657  0.2403601  0.4275   0.66918    
+## center_age:TNMOC12  0.0074704  0.0107894  0.6924   0.48904    
+## center_age:TNMOC13  0.0092739  0.0170033  0.5454   0.58573    
+## center_age:TNMOC14  0.0491720  0.0253844  1.9371   0.05334 .  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<p>Using robust standard errors, all of the standard errors increased except for the interaction of OC13 and age. The interaction between OC14 and age is now not significant. However the age still has a signifcant effect on FVC.</p>
+</div>
+</div>
+<div id="bootstrapped-standard-errors" class="section level2">
+<h2>Bootstrapped Standard Errors</h2>
+<pre class="r"><code>samp_distn&lt;-replicate(5000, {
+ boot_dat&lt;-thor_surg1[sample(nrow(thor_surg1),replace=TRUE),]
+ fit&lt;-lm(center_FVC~ center_age*TNM, data=boot_dat)
+ coef(fit)
+})
+
+## Estimated SEs
+samp_distn%&gt;%t%&gt;%as.data.frame%&gt;%summarize_all(sd)</code></pre>
+<pre><code>##   (Intercept)  center_age    TNMOC12   TNMOC13   TNMOC14 center_age:TNMOC12
+## 1  0.06059374 0.007847356 0.08129178 0.1826787 0.2406337          0.0103663
+##   center_age:TNMOC13 center_age:TNMOC14
+## 1         0.01901175         0.02692742</code></pre>
+<p>Bootstrapped standard errors increased the standard errors for all variable except the interactions bewteen age and TNM stages when compared to the orginal output. Compared to robust standar errors, the standard errors are roughly the same. The only slightly increased values are in the interaction of age with OC13 and OC14 respectively.</p>
+</div>
+<div id="logistical-regression" class="section level2">
+<h2>Logistical Regression</h2>
+<pre class="r"><code>class_diag&lt;-function(probs,truth){
+ tab&lt;-table(factor(probs&gt;.5,levels=c(&quot;FALSE&quot;,&quot;TRUE&quot;)),truth)
+ acc=sum(diag(tab))/sum(tab)
+ sens=tab[2,2]/colSums(tab)[2]
+ spec=tab[1,1]/colSums(tab)[1]
+ ppv=tab[2,2]/rowSums(tab)[2]
+ if(is.numeric(truth)==FALSE &amp; is.logical(truth)==FALSE) truth&lt;-as.numeric(truth)-1
+ #CALCULATE EXACT AUC
+ ord&lt;-order(probs, decreasing=TRUE)
+ probs &lt;- probs[ord]; truth &lt;- truth[ord]
+ TPR=cumsum(truth)/max(1,sum(truth))
+ FPR=cumsum(!truth)/max(1,sum(!truth))
+ dup&lt;-c(probs[-1]&gt;=probs[-length(probs)], FALSE)
+ TPR&lt;-c(0,TPR[!dup],1); FPR&lt;-c(0,FPR[!dup],1)
+ n &lt;- length(TPR)
+ auc&lt;- sum( ((TPR[-1]+TPR[-n])/2) * (FPR[-1]-FPR[-n]) )
+ data.frame(acc,sens,spec,ppv,auc)
+} </code></pre>
+<pre class="r"><code>fit &lt;- glm(Risk1Y ~ ., data = thor_surg, family = &quot;binomial&quot;)
+summary(fit)</code></pre>
+<pre><code>## 
+## Call:
+## glm(formula = Risk1Y ~ ., family = &quot;binomial&quot;, data = thor_surg)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -1.6084  -0.5439  -0.4199  -0.2762   2.4929  
+## 
+## Coefficients:
+##                         Estimate Std. Error z value Pr(&gt;|z|)   
+## (Intercept)           -1.655e+01  2.400e+03  -0.007  0.99450   
+## DiagDGN2               1.474e+01  2.400e+03   0.006  0.99510   
+## DiagDGN3               1.418e+01  2.400e+03   0.006  0.99528   
+## DiagDGN4               1.461e+01  2.400e+03   0.006  0.99514   
+## DiagDGN5               1.638e+01  2.400e+03   0.007  0.99455   
+## DiagDGN6               4.089e-01  2.673e+03   0.000  0.99988   
+## DiagDGN8               1.803e+01  2.400e+03   0.008  0.99400   
+## FVC                   -2.272e-01  1.849e-01  -1.229  0.21909   
+## FEV1                  -3.030e-02  1.786e-02  -1.697  0.08971 . 
+## ZubrodPRZ1            -4.427e-01  5.199e-01  -0.852  0.39448   
+## ZubrodPRZ2            -2.937e-01  7.907e-01  -0.371  0.71030   
+## Pain_before_surgT      7.153e-01  5.556e-01   1.288  0.19788   
+## Haemo_before_surgT     1.743e-01  3.892e-01   0.448  0.65419   
+## Dyspnoea_before_surgT  1.368e+00  4.868e-01   2.811  0.00494 **
+## Cough_before_surgT     5.770e-01  4.826e-01   1.196  0.23185   
+## Weakness_before_surgT  5.162e-01  3.965e-01   1.302  0.19295   
+## TNMOC12                4.394e-01  3.301e-01   1.331  0.18318   
+## TNMOC13                1.179e+00  6.165e-01   1.913  0.05580 . 
+## TNMOC14                1.653e+00  6.094e-01   2.713  0.00668 **
+## Type_2_DMT             9.266e-01  4.445e-01   2.085  0.03709 * 
+## MIT                   -1.466e+01  1.654e+03  -0.009  0.99293   
+## PADT                  -9.789e-02  1.003e+00  -0.098  0.92227   
+## SmokingT               1.084e+00  4.990e-01   2.172  0.02984 * 
+## AsthmaT               -1.398e+01  1.645e+03  -0.008  0.99322   
+## Age                   -9.506e-03  1.810e-02  -0.525  0.59944   
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 395.61  on 469  degrees of freedom
+## Residual deviance: 341.19  on 445  degrees of freedom
+## AIC: 391.19
+## 
+## Number of Fisher Scoring iterations: 15</code></pre>
+<pre class="r"><code>prob&lt;-predict(fit,type=&quot;response&quot;)
+table(predict=as.numeric(prob&gt;.5),truth=thor_surg$Risk1Y)%&gt;%addmargins</code></pre>
+<pre><code>##        truth
+## predict   F   T Sum
+##     0   390  67 457
+##     1    10   3  13
+##     Sum 400  70 470</code></pre>
+<pre class="r"><code>class_diag(prob, thor_surg$Risk1Y)</code></pre>
+<pre><code>##         acc       sens  spec       ppv       auc
+## T 0.8361702 0.04285714 0.975 0.2307692 0.7718214</code></pre>
+<p>Type 2 debetis status (True), Dysnoea (True), smoking (True), and TNM classifcation of OC14 are signifcant and are associated with a postive increase in logit. Meaning the odds for dieing at 1 year increases if the patient has any of the conditions. The Accuracy of the model is reported at 0.83 which is high and missleading. The model classifys most individuals as survived (457 total). Since these indivduals make the largest portion of the data (400 out of 470) a high accurracy is reported. On the other hand senetivety is low at 0.04, highlighting the models poor classificatio of individuals that actaully died. As expected specficity is high at 0.98 and precision is low as expected (0.23).</p>
+<pre class="r"><code>thor_surg2 &lt;- thor_surg
+thor_surg2$Risk1Y &lt;- unfactor(thor_surg2$Risk1Y)
+logit &lt;- predict(fit)
+thor_surg2 &lt;- thor_surg2 %&gt;% mutate(outcome = case_when(Risk1Y == &quot;T&quot; ~ &quot;Died&quot;, Risk1Y == &quot;F&quot; ~ &quot;Survived&quot;))
+thor_surg2$outcome &lt;-factor(thor_surg2$outcome, levels=c(&quot;Died&quot;,&quot;Survived&quot;))
+ggplot(thor_surg2,aes(logit, fill=outcome))+geom_density(alpha=.3)+
+  geom_vline(xintercept=0,lty=2)</code></pre>
+<p><img src="/Project2_files/figure-html/unnamed-chunk-10-1.png" width="672" /> Plotting logit vs density by outcome reveals a large overlap between individuals that died and those that survived. From the model’s prespective these individuals cannot be distinguished.</p>
+<div id="roc-curve" class="section level3">
+<h3>ROC curve</h3>
+<pre class="r"><code>ROCplot&lt;-ggplot(thor_surg2)+geom_roc(aes(d=Risk1Y,m=prob), n.cuts=0) 
+ROCplot</code></pre>
+<pre><code>## Warning in verify_d(data$d): D not labeled 0/1, assuming F = 0 and T = 1!</code></pre>
+<p><img src="/Project2_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
+<pre class="r"><code>calc_auc(ROCplot)</code></pre>
+<pre><code>## Warning in verify_d(data$d): D not labeled 0/1, assuming F = 0 and T = 1!</code></pre>
+<pre><code>##   PANEL group       AUC
+## 1     1    -1 0.7718214</code></pre>
+<p>The AUC for the model is reported as 0.77, however it is likley that this model is overfitting the data. Applying this model to a outside data would likely not preform wel.</p>
+</div>
+<div id="k-fold" class="section level3">
+<h3>K-fold</h3>
+<pre class="r"><code>k=10
+data1&lt;-thor_surg[sample(nrow(thor_surg)),]
+folds&lt;-cut(seq(1:nrow(thor_surg)),breaks=k,labels=F)
+diags&lt;-NULL
+
+# 10 fold cross-validation
+for(i in 1:k){
+ train&lt;-data1[folds!=i,]
+ test&lt;-data1[folds==i,]
+ truth&lt;-test$Risk1Y
+ fit&lt;-glm(Risk1Y ~ Age * Zubrod + FVC + Smoking + Type_2_DM + TNM + Dyspnoea_before_surg,data=train,family=&quot;binomial&quot;)
+ probs&lt;-predict(fit,newdata = test,type=&quot;response&quot;)
+ diags&lt;-rbind(diags,class_diag(probs,truth))
+}
+apply(diags,2,mean)</code></pre>
+<pre><code>##        acc       sens       spec        ppv        auc 
+## 0.84893617 0.04520202 0.98739664        NaN 0.66345159</code></pre>
+<p>A 10 fold cross validation highlights the models overfitting nature and reports a much lower AUC of 0.68 which is poor. Accuracy increased to 0.84 but this is from the exacerbated sensitivity problem of the model. Accordingly senstivity decreased to 0.01 and specifcity increased to 0.98.</p>
+</div>
+</div>
+<div id="lasso" class="section level2">
+<h2>Lasso</h2>
+<pre class="r"><code>fit &lt;- glm(Smoking ~., data = thor_surg, family = &quot;binomial&quot;)
+x&lt;- model.matrix(fit)[,-1]
+y &lt;- as.matrix(thor_surg$Risk1Y)
+cv &lt;- cv.glmnet(x, y, family = &quot;binomial&quot;)
+
+
+lasso1&lt;-glmnet(x,y,lambda=cv$lambda.1se, family = &quot;binomial&quot;)
+coef(lasso1)</code></pre>
+<pre><code>## 25 x 1 sparse Matrix of class &quot;dgCMatrix&quot;
+##                              s0
+## (Intercept)           -8.323007
+## DiagDGN2               .       
+## DiagDGN3               .       
+## DiagDGN4               .       
+## DiagDGN5               .       
+## DiagDGN6               .       
+## DiagDGN8               .       
+## FVC                    .       
+## FEV1                   .       
+## ZubrodPRZ1             .       
+## ZubrodPRZ2             .       
+## Pain_before_surgT      .       
+## Haemo_before_surgT     .       
+## Dyspnoea_before_surgT  .       
+## Cough_before_surgT     .       
+## Weakness_before_surgT  .       
+## TNMOC12                .       
+## TNMOC13                .       
+## TNMOC14                .       
+## Type_2_DMT             .       
+## MIT                    .       
+## PADT                   .       
+## AsthmaT                .       
+## Age                    .       
+## Risk1YT               14.901900</code></pre>
+<pre class="r"><code>k=10
+data1&lt;-thor_surg[sample(nrow(thor_surg)),]
+folds&lt;-cut(seq(1:nrow(thor_surg)),breaks=k,labels=F)
+diags&lt;-NULL
+
+# 10 fold cross-validation
+for(i in 1:k){
+ train&lt;-data1[folds!=i,]
+ test&lt;-data1[folds==i,]
+ truth&lt;-test$Smoking
+ fit&lt;-glm(Smoking ~ Risk1Y, data = train, family=&quot;binomial&quot;)
+ probs&lt;-predict(fit, newdata = test, type=&quot;response&quot;)
+ diags&lt;-rbind(diags, class_diag(probs, truth))
+}
+apply(diags, 2, mean)</code></pre>
+<pre><code>##       acc      sens      spec       ppv       auc 
+## 0.8212766 1.0000000 0.0000000 0.8212766 0.5453428</code></pre>
+<p>After the lasso analysis the only variable retained for smoking is Risk1Y (1 year survival = True). A 10 fold cross validation was preformed with these variables and returned a AUC of 0.54 and an accuracy of 0.5. This is decreased from the model predicting Risk1Y (accuracy of 0.84). This is due to Risk1Y being a poor differentiator of smoking and the model is essentially guessing.</p>
+</div>
+
+              <hr>
+              <div class="related-posts">
+                <h5>Related Posts</h5>
+                
+              </div>
+            </div>
+          </div>
+          <hr>
+        <div class="disqus">
+  <div id="disqus_thread"></div>
+  <script type="text/javascript">
+
+    (function() {
+      
+      
+      if (window.location.hostname == "localhost")
+        return;
+
+      var disqus_shortname = '';
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  <a href="http://disqus.com/" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+        </div>
+      </div>
+      
+    </div>
+
+    
+    <footer>
+  <div id="footer">
+    <div class="container">
+      <p class="text-muted">&copy; All rights reserved. Powered by <a href="https://gohugo.io/">Hugo</a> and
+      <a href="http://www.github.com/nurlansu/hugo-sustain/">sustain</a> with ♥</p>
+    </div>
+  </div>
+</footer>
+<div class="footer"></div>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="/js/docs.min.js"></script>
+<script src="/js/main.js"></script>
+
+<script src="/js/ie10-viewport-bug-workaround.js"></script>
+
+
+    
+  </body>
+</html>

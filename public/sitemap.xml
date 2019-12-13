@@ -123,13 +123,11 @@
   </url>
   
   <url>
-    <loc>/project_1/</loc>
-    <priority>0</priority>
+    <loc>/project1/</loc>
   </url>
   
   <url>
-    <loc>/project_2/</loc>
-    <priority>0</priority>
+    <loc>/project2/</loc>
   </url>
   
 </urlset>

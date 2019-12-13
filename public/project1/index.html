@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="Brendan Panici" />
+    <meta name="description" content="A simple website for things I find interesting.">
+    <link rel="shortcut icon" type="image/x-icon" href="/img/favicon.ico">
+    <title>Project 1: 2018 Storm Related Deaths</title>
+    <meta name="generator" content="Hugo 0.60.1" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="/css/main.css" />
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,400,200bold,400old" />
+    
+    <!--[if lt IE 9]>
+			<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+			<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+
+    
+  </head>
+
+  <body>
+    <div id="wrap">
+
+      
+      <nav class="navbar navbar-default">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="/"><i class="fa fa-home"></i></a>
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <div class="navbar-collapse collapse" id="navbar">
+      <ul class="nav navbar-nav navbar-right">
+      
+        
+        <li><a href="/blog/">BLOG</a></li>
+        
+        <li><a href="/projects/">PROJECTS</a></li>
+        
+        <li><a href="/resume/">RESUME</a></li>
+        
+      
+      </ul>
+    </div>
+  </div>
+</nav>
+
+      
+      <div class="container">
+        <div class="blog-post">
+          <h3>
+            <strong><a href="/project1/">Project 1: 2018 Storm Related Deaths</a></strong>
+          </h3>
+        </div>
+        <div class="blog-title">
+          <h4>
+          January 1, 0001
+            &nbsp;&nbsp;
+            
+          </h4>
+        </div>
+        <div class="panel panel-default">
+          <div class="panel-body">
+            <div class="blogpost">
+              
+
+
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>The first data set I have choosen reports storm event details that happened in the United States in 2018, gathered by the NOAA. This data set contains a multitude of information such as time information, state, event type, culmintive injuries, culminative deaths, damage cost, and event type descriptors. The second dataset reports details for storm related deaths in 2018 also gathered by the NOAA. This dataset contains information for each indivdual death such as sex, age, fataility type, and loction description. It should be noted this dataset only contains deaths with details that have been reported to NOAA, therefore, the number of total deaths for a event may be larger than the reported amount in the fatalities dataset. As such, the number of deaths reported events details dataset is likely larger since it is all encompassing. Both datasets report event id allowing me to combine event details to fatality details. The recent surge in storm events is likely related to climate change. I wanted to develope an understanding of how such events affect people. I decided on 2018 as it is the most recent year with full information. I’m expecting to find a relationship between event deaths and coastal states as I predicte hurranicanes are the most destructive events.</p>
+</div>
+<div id="data-processing" class="section level2">
+<h2>Data Processing</h2>
+<div id="importing-the-data-and-loading-packages" class="section level3">
+<h3>Importing the data and loading packages:</h3>
+<pre class="r"><code>library(ggplot2)
+library(readr)
+library(dplyr)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;dplyr&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:stats&#39;:
+## 
+##     filter, lag</code></pre>
+<pre><code>## The following objects are masked from &#39;package:base&#39;:
+## 
+##     intersect, setdiff, setequal, union</code></pre>
+<pre class="r"><code>library(tidyr)
+library(factoextra)</code></pre>
+<pre><code>## Welcome! Related Books: `Practical Guide To Cluster Analysis in R` at https://goo.gl/13EFCZ</code></pre>
+<pre class="r"><code>#data importing 
+stormevents_fata &lt;- read_csv(&quot;https://www1.ncdc.noaa.gov/pub/data/swdi/stormevents/csvfiles/StormEvents_fatalities-ftp_v1.0_d2018_c20191116.csv.gz&quot;)</code></pre>
+<pre><code>## Parsed with column specification:
+## cols(
+##   FAT_YEARMONTH = col_double(),
+##   FAT_DAY = col_double(),
+##   FAT_TIME = col_double(),
+##   FATALITY_ID = col_double(),
+##   EVENT_ID = col_double(),
+##   FATALITY_TYPE = col_character(),
+##   FATALITY_DATE = col_character(),
+##   FATALITY_AGE = col_double(),
+##   FATALITY_SEX = col_character(),
+##   FATALITY_LOCATION = col_character(),
+##   EVENT_YEARMONTH = col_double()
+## )</code></pre>
+<pre class="r"><code>stormevents_details &lt;- read_csv(&quot;https://www1.ncdc.noaa.gov/pub/data/swdi/stormevents/csvfiles/StormEvents_details-ftp_v1.0_d2018_c20191116.csv.gz&quot;)</code></pre>
+<pre><code>## Parsed with column specification:
+## cols(
+##   .default = col_character(),
+##   BEGIN_YEARMONTH = col_double(),
+##   BEGIN_DAY = col_double(),
+##   BEGIN_TIME = col_double(),
+##   END_YEARMONTH = col_double(),
+##   END_DAY = col_double(),
+##   END_TIME = col_double(),
+##   EPISODE_ID = col_double(),
+##   EVENT_ID = col_double(),
+##   STATE_FIPS = col_double(),
+##   YEAR = col_double(),
+##   CZ_FIPS = col_double(),
+##   INJURIES_DIRECT = col_double(),
+##   INJURIES_INDIRECT = col_double(),
+##   DEATHS_DIRECT = col_double(),
+##   DEATHS_INDIRECT = col_double(),
+##   MAGNITUDE = col_double(),
+##   CATEGORY = col_logical(),
+##   TOR_LENGTH = col_double(),
+##   TOR_WIDTH = col_double(),
+##   TOR_OTHER_CZ_FIPS = col_double()
+##   # ... with 6 more columns
+## )</code></pre>
+<pre><code>## See spec(...) for full column specifications.</code></pre>
+<pre><code>## Warning: 16 parsing failures.
+##   row      col           expected actual                                                                                                                file
+## 53989 CATEGORY 1/0/T/F/TRUE/FALSE      3 &#39;https://www1.ncdc.noaa.gov/pub/data/swdi/stormevents/csvfiles/StormEvents_details-ftp_v1.0_d2018_c20191116.csv.gz&#39;
+## 56944 CATEGORY 1/0/T/F/TRUE/FALSE      2 &#39;https://www1.ncdc.noaa.gov/pub/data/swdi/stormevents/csvfiles/StormEvents_details-ftp_v1.0_d2018_c20191116.csv.gz&#39;
+## 57026 CATEGORY 1/0/T/F/TRUE/FALSE      2 &#39;https://www1.ncdc.noaa.gov/pub/data/swdi/stormevents/csvfiles/StormEvents_details-ftp_v1.0_d2018_c20191116.csv.gz&#39;
+## 57027 CATEGORY 1/0/T/F/TRUE/FALSE      3 &#39;https://www1.ncdc.noaa.gov/pub/data/swdi/stormevents/csvfiles/StormEvents_details-ftp_v1.0_d2018_c20191116.csv.gz&#39;
+## 57028 CATEGORY 1/0/T/F/TRUE/FALSE      4 &#39;https://www1.ncdc.noaa.gov/pub/data/swdi/stormevents/csvfiles/StormEvents_details-ftp_v1.0_d2018_c20191116.csv.gz&#39;
+## ..... ........ .................. ...... ...................................................................................................................
+## See problems(...) for more details.</code></pre>
+<pre class="r"><code>#intial look
+stormevents_details %&gt;% glimpse()</code></pre>
+<pre><code>## Observations: 62,354
+## Variables: 51
+## $ BEGIN_YEARMONTH    &lt;dbl&gt; 201806, 201806, 201806, 201806, 201806, 201806, ...
+## $ BEGIN_DAY          &lt;dbl&gt; 6, 6, 30, 30, 6, 9, 11, 22, 22, 6, 6, 6, 6, 4, 8...
+## $ BEGIN_TIME         &lt;dbl&gt; 1810, 1741, 2330, 2345, 1824, 1705, 1811, 1710, ...
+## $ END_YEARMONTH      &lt;dbl&gt; 201806, 201806, 201806, 201806, 201806, 201806, ...
+## $ END_DAY            &lt;dbl&gt; 6, 6, 30, 30, 6, 9, 11, 22, 22, 6, 6, 6, 6, 4, 8...
+## $ END_TIME           &lt;dbl&gt; 1810, 1741, 2332, 2345, 1824, 1705, 1811, 1710, ...
+## $ EPISODE_ID         &lt;dbl&gt; 125578, 125578, 125988, 125988, 125578, 124972, ...
+## $ EVENT_ID           &lt;dbl&gt; 753161, 753160, 755273, 755929, 753163, 749541, ...
+## $ STATE              &lt;chr&gt; &quot;NEBRASKA&quot;, &quot;NEBRASKA&quot;, &quot;VERMONT&quot;, &quot;VERMONT&quot;, &quot;N...
+## $ STATE_FIPS         &lt;dbl&gt; 31, 31, 50, 50, 31, 21, 21, 21, 21, 31, 31, 31, ...
+## $ YEAR               &lt;dbl&gt; 2018, 2018, 2018, 2018, 2018, 2018, 2018, 2018, ...
+## $ MONTH_NAME         &lt;chr&gt; &quot;June&quot;, &quot;June&quot;, &quot;June&quot;, &quot;June&quot;, &quot;June&quot;, &quot;June&quot;, ...
+## $ EVENT_TYPE         &lt;chr&gt; &quot;Hail&quot;, &quot;Hail&quot;, &quot;Thunderstorm Wind&quot;, &quot;Thundersto...
+## $ CZ_TYPE            &lt;chr&gt; &quot;C&quot;, &quot;C&quot;, &quot;C&quot;, &quot;C&quot;, &quot;C&quot;, &quot;C&quot;, &quot;C&quot;, &quot;C&quot;, &quot;C&quot;, &quot;C&quot;...
+## $ CZ_FIPS            &lt;dbl&gt; 69, 161, 11, 15, 135, 147, 235, 195, 25, 135, 13...
+## $ CZ_NAME            &lt;chr&gt; &quot;GARDEN&quot;, &quot;SHERIDAN&quot;, &quot;FRANKLIN&quot;, &quot;LAMOILLE&quot;, &quot;P...
+## $ WFO                &lt;chr&gt; &quot;LBF&quot;, &quot;LBF&quot;, &quot;BTV&quot;, &quot;BTV&quot;, &quot;LBF&quot;, &quot;JKL&quot;, &quot;JKL&quot;,...
+## $ BEGIN_DATE_TIME    &lt;chr&gt; &quot;06-JUN-18 18:10:00&quot;, &quot;06-JUN-18 17:41:00&quot;, &quot;30-...
+## $ CZ_TIMEZONE        &lt;chr&gt; &quot;MST-7&quot;, &quot;MST-7&quot;, &quot;EST-5&quot;, &quot;EST-5&quot;, &quot;MST-7&quot;, &quot;ES...
+## $ END_DATE_TIME      &lt;chr&gt; &quot;06-JUN-18 18:10:00&quot;, &quot;06-JUN-18 17:41:00&quot;, &quot;30-...
+## $ INJURIES_DIRECT    &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ...
+## $ INJURIES_INDIRECT  &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ...
+## $ DEATHS_DIRECT      &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ...
+## $ DEATHS_INDIRECT    &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ...
+## $ DAMAGE_PROPERTY    &lt;chr&gt; &quot;0.00K&quot;, &quot;0.00K&quot;, &quot;15.00K&quot;, &quot;10.00K&quot;, &quot;0.00K&quot;, &quot;...
+## $ DAMAGE_CROPS       &lt;chr&gt; &quot;0.00K&quot;, &quot;0.00K&quot;, &quot;0.00K&quot;, &quot;0.00K&quot;, &quot;0.00K&quot;, &quot;0....
+## $ SOURCE             &lt;chr&gt; &quot;Public&quot;, &quot;Trained Spotter&quot;, &quot;Park/Forest Servic...
+## $ MAGNITUDE          &lt;dbl&gt; 1.00, 1.25, 60.00, 55.00, NA, 45.00, 53.00, 50.0...
+## $ MAGNITUDE_TYPE     &lt;chr&gt; NA, NA, &quot;EG&quot;, &quot;EG&quot;, NA, &quot;EG&quot;, &quot;EG&quot;, &quot;EG&quot;, &quot;EG&quot;, ...
+## $ FLOOD_CAUSE        &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ...
+## $ CATEGORY           &lt;lgl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ...
+## $ TOR_F_SCALE        &lt;chr&gt; NA, NA, NA, NA, &quot;EF0&quot;, NA, NA, NA, NA, NA, NA, N...
+## $ TOR_LENGTH         &lt;dbl&gt; NA, NA, NA, NA, 0.1, NA, NA, NA, NA, NA, NA, NA,...
+## $ TOR_WIDTH          &lt;dbl&gt; NA, NA, NA, NA, 10, NA, NA, NA, NA, NA, NA, NA, ...
+## $ TOR_OTHER_WFO      &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ...
+## $ TOR_OTHER_CZ_STATE &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ...
+## $ TOR_OTHER_CZ_FIPS  &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ...
+## $ TOR_OTHER_CZ_NAME  &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ...
+## $ BEGIN_RANGE        &lt;dbl&gt; 36, 1, 3, 0, 5, 1, 1, 1, 1, 1, 4, 1, 2, 4, 1, 1,...
+## $ BEGIN_AZIMUTH      &lt;chr&gt; &quot;N&quot;, &quot;NW&quot;, &quot;WSW&quot;, &quot;NE&quot;, &quot;NW&quot;, &quot;W&quot;, &quot;SSW&quot;, &quot;SSW&quot;,...
+## $ BEGIN_LOCATION     &lt;chr&gt; &quot;OSHKOSH&quot;, &quot;BINGHAM&quot;, &quot;WEST BERKSHIRE&quot;, &quot;BELVIDE...
+## $ END_RANGE          &lt;dbl&gt; 36, 1, 3, 0, 5, 1, 1, 1, 1, 1, 4, 1, 2, 4, 0, 1,...
+## $ END_AZIMUTH        &lt;chr&gt; &quot;N&quot;, &quot;NW&quot;, &quot;WSW&quot;, &quot;NE&quot;, &quot;NW&quot;, &quot;W&quot;, &quot;SSW&quot;, &quot;SSW&quot;,...
+## $ END_LOCATION       &lt;chr&gt; &quot;OSHKOSH&quot;, &quot;BINGHAM&quot;, &quot;WEST BERKSHIRE&quot;, &quot;BELVIDE...
+## $ BEGIN_LAT          &lt;dbl&gt; 41.9300, 42.0300, 44.9565, 44.7316, 40.9000, 36....
+## $ BEGIN_LON          &lt;dbl&gt; -102.2100, -102.1000, -72.8699, -72.7474, -101.7...
+## $ END_LAT            &lt;dbl&gt; 41.9300, 42.0300, 44.9565, 44.7316, 40.9000, 36....
+## $ END_LON            &lt;dbl&gt; -102.2100, -102.1000, -72.8699, -72.7474, -101.7...
+## $ EPISODE_NARRATIVE  &lt;chr&gt; &quot;Severe storms developed in the Nebraska Panhand...
+## $ EVENT_NARRATIVE    &lt;chr&gt; &quot;Hail predominately penny size with some quarter...
+## $ DATA_SOURCE        &lt;chr&gt; &quot;CSV&quot;, &quot;CSV&quot;, &quot;CSV&quot;, &quot;CSV&quot;, &quot;CSV&quot;, &quot;CSV&quot;, &quot;CSV&quot;,...</code></pre>
+<pre class="r"><code>stormevents_fata %&gt;% glimpse()</code></pre>
+<pre><code>## Observations: 800
+## Variables: 11
+## $ FAT_YEARMONTH     &lt;dbl&gt; 201804, 201805, 201811, 201811, 201802, 201802, 2...
+## $ FAT_DAY           &lt;dbl&gt; 13, 28, 2, 2, 4, 4, 9, 10, 19, 3, 3, 5, 25, 18, 2...
+## $ FAT_TIME          &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0...
+## $ FATALITY_ID       &lt;dbl&gt; 35464, 35476, 36797, 36798, 34944, 34947, 34950, ...
+## $ EVENT_ID          &lt;dbl&gt; 753636, 754296, 791228, 791228, 730218, 730219, 7...
+## $ FATALITY_TYPE     &lt;chr&gt; &quot;I&quot;, &quot;D&quot;, &quot;D&quot;, &quot;D&quot;, &quot;I&quot;, &quot;I&quot;, &quot;I&quot;, &quot;I&quot;, &quot;I&quot;, &quot;I&quot;,...
+## $ FATALITY_DATE     &lt;chr&gt; &quot;04/13/2018 00:00:00&quot;, &quot;05/28/2018 00:00:00&quot;, &quot;11...
+## $ FATALITY_AGE      &lt;dbl&gt; NA, 7, 54, 37, 55, 63, 57, 42, 31, 15, 19, 73, 21...
+## $ FATALITY_SEX      &lt;chr&gt; &quot;M&quot;, &quot;M&quot;, &quot;M&quot;, &quot;M&quot;, &quot;M&quot;, &quot;F&quot;, &quot;M&quot;, &quot;M&quot;, &quot;F&quot;, &quot;F&quot;,...
+## $ FATALITY_LOCATION &lt;chr&gt; &quot;Outside/Open Areas&quot;, &quot;Under Tree&quot;, &quot;Permanent St...
+## $ EVENT_YEARMONTH   &lt;dbl&gt; 201804, 201805, 201811, 201811, 201802, 201802, 2...</code></pre>
+<p>Looking at the data we see both are in tidy format, each column is a variable and each row is a unique observation.</p>
+</div>
+<div id="making-the-data-untidy" class="section level3">
+<h3>Making the data untidy:</h3>
+<pre class="r"><code>#making data wider
+fata_wider &lt;- pivot_wider(stormevents_fata, 
+                         names_from = c(&quot;FATALITY_SEX&quot;, &quot;FATALITY_TYPE&quot;), 
+                         values_from = &quot;EVENT_ID&quot;)
+fata_wider %&gt;% glimpse()</code></pre>
+<pre><code>## Observations: 800
+## Variables: 14
+## $ FAT_YEARMONTH     &lt;dbl&gt; 201804, 201805, 201811, 201811, 201802, 201802, 2...
+## $ FAT_DAY           &lt;dbl&gt; 13, 28, 2, 2, 4, 4, 9, 10, 19, 3, 3, 5, 25, 18, 2...
+## $ FAT_TIME          &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0...
+## $ FATALITY_ID       &lt;dbl&gt; 35464, 35476, 36797, 36798, 34944, 34947, 34950, ...
+## $ FATALITY_DATE     &lt;chr&gt; &quot;04/13/2018 00:00:00&quot;, &quot;05/28/2018 00:00:00&quot;, &quot;11...
+## $ FATALITY_AGE      &lt;dbl&gt; NA, 7, 54, 37, 55, 63, 57, 42, 31, 15, 19, 73, 21...
+## $ FATALITY_LOCATION &lt;chr&gt; &quot;Outside/Open Areas&quot;, &quot;Under Tree&quot;, &quot;Permanent St...
+## $ EVENT_YEARMONTH   &lt;dbl&gt; 201804, 201805, 201811, 201811, 201802, 201802, 2...
+## $ M_I               &lt;dbl&gt; 753636, NA, NA, NA, 730218, NA, 730295, 730812, N...
+## $ M_D               &lt;dbl&gt; NA, 754296, 791228, 791228, NA, NA, NA, NA, NA, N...
+## $ F_I               &lt;dbl&gt; NA, NA, NA, NA, NA, 730219, NA, NA, 731146, 73115...
+## $ NA_I              &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N...
+## $ F_D               &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N...
+## $ NA_D              &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N...</code></pre>
+<p>This block is pivoting the variables fatatilty sex and fatality type and making in into a wider format.</p>
+</div>
+<div id="making-he-data-tidy" class="section level3">
+<h3>Making he data tidy:</h3>
+<pre class="r"><code>#making data longer again
+stormevents_fata_tidy &lt;- pivot_longer(fata_wider, 
+                                     cols = c(&quot;F_I&quot;, &quot;M_I&quot;,&quot;F_D&quot;,&quot;M_D&quot;,&quot;NA_D&quot;,&quot;NA_I&quot;), 
+                                     names_to = &quot;details&quot;, 
+                                     values_to = &quot;EVENT_ID&quot;) %&gt;%
+  separate(details, into = c(&quot;FATALITY_SEX&quot; ,&quot;FATALITY_TYPE&quot;)) %&gt;% 
+  filter(EVENT_ID != is.na(EVENT_ID))</code></pre>
+<p>Here, the wide data is being gathered back into fatality sex and type.</p>
+</div>
+<div id="data-cleaning" class="section level3">
+<h3>Data cleaning:</h3>
+<pre class="r"><code>stormevents_fata_tidy %&gt;% glimpse()</code></pre>
+<pre><code>## Observations: 800
+## Variables: 11
+## $ FAT_YEARMONTH     &lt;dbl&gt; 201804, 201805, 201811, 201811, 201802, 201802, 2...
+## $ FAT_DAY           &lt;dbl&gt; 13, 28, 2, 2, 4, 4, 9, 10, 19, 3, 3, 5, 25, 18, 2...
+## $ FAT_TIME          &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0...
+## $ FATALITY_ID       &lt;dbl&gt; 35464, 35476, 36797, 36798, 34944, 34947, 34950, ...
+## $ FATALITY_DATE     &lt;chr&gt; &quot;04/13/2018 00:00:00&quot;, &quot;05/28/2018 00:00:00&quot;, &quot;11...
+## $ FATALITY_AGE      &lt;dbl&gt; NA, 7, 54, 37, 55, 63, 57, 42, 31, 15, 19, 73, 21...
+## $ FATALITY_LOCATION &lt;chr&gt; &quot;Outside/Open Areas&quot;, &quot;Under Tree&quot;, &quot;Permanent St...
+## $ EVENT_YEARMONTH   &lt;dbl&gt; 201804, 201805, 201811, 201811, 201802, 201802, 2...
+## $ FATALITY_SEX      &lt;chr&gt; &quot;M&quot;, &quot;M&quot;, &quot;M&quot;, &quot;M&quot;, &quot;M&quot;, &quot;F&quot;, &quot;M&quot;, &quot;M&quot;, &quot;F&quot;, &quot;F&quot;,...
+## $ FATALITY_TYPE     &lt;chr&gt; &quot;I&quot;, &quot;D&quot;, &quot;D&quot;, &quot;D&quot;, &quot;I&quot;, &quot;I&quot;, &quot;I&quot;, &quot;I&quot;, &quot;I&quot;, &quot;I&quot;,...
+## $ EVENT_ID          &lt;dbl&gt; 753636, 754296, 791228, 791228, 730218, 730219, 7...</code></pre>
+<pre class="r"><code>#making data tidy by removing redundant or unwanted rows
+#dropping colums containing mostly NAs
+stormevents_details %&gt;% select(contains(&quot;TOR&quot;)) %&gt;% na.omit() %&gt;% glimpse()</code></pre>
+<pre><code>## Observations: 123
+## Variables: 7
+## $ TOR_F_SCALE        &lt;chr&gt; &quot;EF1&quot;, &quot;EF0&quot;, &quot;EF1&quot;, &quot;EF0&quot;, &quot;EF1&quot;, &quot;EF1&quot;, &quot;EF0&quot;,...
+## $ TOR_LENGTH         &lt;dbl&gt; 3.15, 0.06, 8.63, 0.69, 5.45, 4.26, 8.40, 12.44,...
+## $ TOR_WIDTH          &lt;dbl&gt; 70, 25, 200, 50, 250, 1200, 25, 150, 125, 1900, ...
+## $ TOR_OTHER_WFO      &lt;chr&gt; &quot;AMA&quot;, &quot;ILX&quot;, &quot;FGF&quot;, &quot;LSX&quot;, &quot;JAN&quot;, &quot;SHV&quot;, &quot;TAE&quot;,...
+## $ TOR_OTHER_CZ_STATE &lt;chr&gt; &quot;TX&quot;, &quot;IL&quot;, &quot;MN&quot;, &quot;IL&quot;, &quot;MS&quot;, &quot;LA&quot;, &quot;AL&quot;, &quot;MO&quot;, ...
+## $ TOR_OTHER_CZ_FIPS  &lt;dbl&gt; 295, 21, 29, 149, 67, 127, 69, 143, 35, 29, 69, ...
+## $ TOR_OTHER_CZ_NAME  &lt;chr&gt; &quot;LIPSCOMB&quot;, &quot;CHRISTIAN&quot;, &quot;CLEARWATER&quot;, &quot;PIKE&quot;, &quot;...</code></pre>
+<pre class="r"><code>stormevents_details &lt;- stormevents_details %&gt;% select(-contains(&quot;TOR&quot;)) %&gt;% select(-contains(&quot;MAGNITUDE&quot;)) %&gt;% select(-contains(&quot;CATEGORY&quot;)) %&gt;% select(-contains(&quot;FLOOD&quot;)) %&gt;% select(-c(&quot;BEGIN_RANGE&quot;:&quot;END_LON&quot;) )
+
+# droping narative cols &lt;- contain description of event and data source col that just contains csv
+stormevents_details &lt;- stormevents_details %&gt;% select(-contains(&quot;NARRATIVE&quot;)) %&gt;% select(-contains(&quot;DATA_SOURCE&quot;))</code></pre>
+<p>The code above some unwanted data from storm details. Much of these such as TOR (torando related) and category (hurricane related) don’t apply to most of the data. Additionally, data source and narrative is dropped for being pointless.</p>
+</div>
+<div id="data-joining" class="section level3">
+<h3>Data joining:</h3>
+<pre class="r"><code>#joining all data with fatailities 
+storm_fata_detail&lt;- left_join(stormevents_fata, stormevents_details, by= &quot;EVENT_ID&quot;)
+storm_fata_detail %&gt;% glimpse()</code></pre>
+<pre><code>## Observations: 800
+## Variables: 37
+## $ FAT_YEARMONTH     &lt;dbl&gt; 201804, 201805, 201811, 201811, 201802, 201802, 2...
+## $ FAT_DAY           &lt;dbl&gt; 13, 28, 2, 2, 4, 4, 9, 10, 19, 3, 3, 5, 25, 18, 2...
+## $ FAT_TIME          &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0...
+## $ FATALITY_ID       &lt;dbl&gt; 35464, 35476, 36797, 36798, 34944, 34947, 34950, ...
+## $ EVENT_ID          &lt;dbl&gt; 753636, 754296, 791228, 791228, 730218, 730219, 7...
+## $ FATALITY_TYPE     &lt;chr&gt; &quot;I&quot;, &quot;D&quot;, &quot;D&quot;, &quot;D&quot;, &quot;I&quot;, &quot;I&quot;, &quot;I&quot;, &quot;I&quot;, &quot;I&quot;, &quot;I&quot;,...
+## $ FATALITY_DATE     &lt;chr&gt; &quot;04/13/2018 00:00:00&quot;, &quot;05/28/2018 00:00:00&quot;, &quot;11...
+## $ FATALITY_AGE      &lt;dbl&gt; NA, 7, 54, 37, 55, 63, 57, 42, 31, 15, 19, 73, 21...
+## $ FATALITY_SEX      &lt;chr&gt; &quot;M&quot;, &quot;M&quot;, &quot;M&quot;, &quot;M&quot;, &quot;M&quot;, &quot;F&quot;, &quot;M&quot;, &quot;M&quot;, &quot;F&quot;, &quot;F&quot;,...
+## $ FATALITY_LOCATION &lt;chr&gt; &quot;Outside/Open Areas&quot;, &quot;Under Tree&quot;, &quot;Permanent St...
+## $ EVENT_YEARMONTH   &lt;dbl&gt; 201804, 201805, 201811, 201811, 201802, 201802, 2...
+## $ BEGIN_YEARMONTH   &lt;dbl&gt; 201804, 201805, 201811, 201811, 201802, 201802, 2...
+## $ BEGIN_DAY         &lt;dbl&gt; 13, 28, 2, 2, 4, 4, 9, 10, 19, 3, 3, 5, 24, 18, 2...
+## $ BEGIN_TIME        &lt;dbl&gt; 2200, 1530, 2042, 2042, 1300, 1300, 0, 300, 800, ...
+## $ END_YEARMONTH     &lt;dbl&gt; 201804, 201805, 201811, 201811, 201802, 201802, 2...
+## $ END_DAY           &lt;dbl&gt; 15, 28, 2, 2, 4, 4, 9, 11, 20, 3, 3, 5, 25, 19, 2...
+## $ END_TIME          &lt;dbl&gt; 1930, 1540, 2044, 2044, 1800, 1800, 2100, 1100, 9...
+## $ EPISODE_ID        &lt;dbl&gt; 125657, 125770, 132240, 132240, 121966, 121966, 1...
+## $ STATE             &lt;chr&gt; &quot;MINNESOTA&quot;, &quot;TENNESSEE&quot;, &quot;MARYLAND&quot;, &quot;MARYLAND&quot;,...
+## $ STATE_FIPS        &lt;dbl&gt; 27, 47, 24, 24, 29, 29, 18, 29, 27, 27, 27, 30, 2...
+## $ YEAR              &lt;dbl&gt; 2018, 2018, 2018, 2018, 2018, 2018, 2018, 2018, 2...
+## $ MONTH_NAME        &lt;chr&gt; &quot;April&quot;, &quot;May&quot;, &quot;November&quot;, &quot;November&quot;, &quot;February...
+## $ EVENT_TYPE        &lt;chr&gt; &quot;Blizzard&quot;, &quot;Lightning&quot;, &quot;Tornado&quot;, &quot;Tornado&quot;, &quot;W...
+## $ CZ_TYPE           &lt;chr&gt; &quot;Z&quot;, &quot;C&quot;, &quot;C&quot;, &quot;C&quot;, &quot;Z&quot;, &quot;Z&quot;, &quot;Z&quot;, &quot;Z&quot;, &quot;Z&quot;, &quot;Z&quot;,...
+## $ CZ_FIPS           &lt;dbl&gt; 98, 183, 510, 510, 91, 81, 6, 95, 37, 37, 37, 39,...
+## $ CZ_NAME           &lt;chr&gt; &quot;ROCK&quot;, &quot;WEAKLEY&quot;, &quot;BALTIMORE CITY (C)&quot;, &quot;BALTIMO...
+## $ WFO               &lt;chr&gt; &quot;FSD&quot;, &quot;MEG&quot;, &quot;LWX&quot;, &quot;LWX&quot;, &quot;SGF&quot;, &quot;SGF&quot;, &quot;IWX&quot;, ...
+## $ BEGIN_DATE_TIME   &lt;chr&gt; &quot;13-APR-18 22:00:00&quot;, &quot;28-MAY-18 15:30:00&quot;, &quot;02-N...
+## $ CZ_TIMEZONE       &lt;chr&gt; &quot;CST-6&quot;, &quot;CST-6&quot;, &quot;EST-5&quot;, &quot;EST-5&quot;, &quot;CST-6&quot;, &quot;CST...
+## $ END_DATE_TIME     &lt;chr&gt; &quot;15-APR-18 19:30:00&quot;, &quot;28-MAY-18 15:40:00&quot;, &quot;02-N...
+## $ INJURIES_DIRECT   &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0...
+## $ INJURIES_INDIRECT &lt;dbl&gt; 0, 0, 0, 0, 13, 10, 0, 2, 2, 1, 1, 0, 0, 0, 0, 2,...
+## $ DEATHS_DIRECT     &lt;dbl&gt; 0, 1, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1...
+## $ DEATHS_INDIRECT   &lt;dbl&gt; 1, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 1, 1, 0, 0, 1, 0...
+## $ DAMAGE_PROPERTY   &lt;chr&gt; &quot;0.00K&quot;, &quot;0.00K&quot;, NA, NA, &quot;0.00K&quot;, &quot;0.00K&quot;, &quot;0.00...
+## $ DAMAGE_CROPS      &lt;chr&gt; &quot;0.00K&quot;, &quot;0.00K&quot;, NA, NA, &quot;0.00K&quot;, &quot;0.00K&quot;, &quot;0.00...
+## $ SOURCE            &lt;chr&gt; &quot;COOP Observer&quot;, &quot;Broadcast Media&quot;, &quot;NWS Storm Su...</code></pre>
+<pre class="r"><code>storm &lt;- na.omit(storm_fata_detail)</code></pre>
+<p>This code joins the fatality dataset to the storm details dataset via a left join, meaning only storms with reported fatalities in the fatatlites dataset are kept. Though this eliminates storm without fatalities it also eliminates storms with fatalities not reported to the NOAA in detail allowing for potential basis in later reports.</p>
+</div>
+</div>
+<div id="data-exploration" class="section level2">
+<h2>Data Exploration</h2>
+<pre class="r"><code>#forming property damage into a numeric variable -&gt; maintains original variable
+storm_dam &lt;- storm %&gt;% 
+  separate(DAMAGE_PROPERTY, sep = -1, into = c(&quot;num&quot;, &quot;order&quot;)) %&gt;%
+  mutate(DAMAGE_PROPERTY_NUM = 
+           case_when(order == &quot;M&quot; ~ as.numeric(num) * 100000, 
+                     order == &quot;K&quot; ~ as.integer(num) * 1000)) %&gt;% 
+  unite(col = &quot;DAMAGE_PROPERTY&quot;, c(&quot;num&quot;, &quot;order&quot;), sep = &quot;&quot;)
+
+#forming crop damage into numeric variable -&gt; maintains original variable
+storm_dam &lt;- storm_dam %&gt;% 
+  separate(DAMAGE_CROPS, sep = -1, into = c(&quot;num&quot;, &quot;order&quot;)) %&gt;% 
+  mutate(DAMAGE_CROPS_NUM = 
+           case_when(order == &quot;M&quot; ~ as.numeric(num) * 100000, 
+                     order == &quot;K&quot; ~ as.integer(num) * 1000)) %&gt;% 
+  unite(col = &quot;DAMAGE_CROPS&quot;, c(&quot;num&quot;, &quot;order&quot;), sep = &quot;&quot;)</code></pre>
+<p>Turning categorical damage data into numerical for allow better intrepretaion. Case when was used determine the magnitude of multiplication needed to give the appropriate value. The categorical representation is retained for comparison.</p>
+<pre class="r"><code>#correlation between numerical
+storm_dam %&gt;% select(FATALITY_AGE, DEATHS_DIRECT, DEATHS_INDIRECT, INJURIES_DIRECT, INJURIES_INDIRECT, DAMAGE_PROPERTY_NUM, DAMAGE_CROPS_NUM) %&gt;% cor()</code></pre>
+<pre><code>##                     FATALITY_AGE DEATHS_DIRECT DEATHS_INDIRECT INJURIES_DIRECT
+## FATALITY_AGE          1.00000000    0.12200582     0.219425246     -0.10548847
+## DEATHS_DIRECT         0.12200582    1.00000000     0.080048921     -0.04852242
+## DEATHS_INDIRECT       0.21942525    0.08004892     1.000000000     -0.05871531
+## INJURIES_DIRECT      -0.10548847   -0.04852242    -0.058715311      1.00000000
+## INJURIES_INDIRECT     0.02463977   -0.07636258    -0.002134954     -0.01977170
+## DAMAGE_PROPERTY_NUM   0.17827351   -0.03659714     0.325287324     -0.03968078
+## DAMAGE_CROPS_NUM      0.01304750   -0.07374458     0.010966936     -0.02423096
+##                     INJURIES_INDIRECT DAMAGE_PROPERTY_NUM DAMAGE_CROPS_NUM
+## FATALITY_AGE              0.024639774          0.17827351       0.01304750
+## DEATHS_DIRECT            -0.076362577         -0.03659714      -0.07374458
+## DEATHS_INDIRECT          -0.002134954          0.32528732       0.01096694
+## INJURIES_DIRECT          -0.019771696         -0.03968078      -0.02423096
+## INJURIES_INDIRECT         1.000000000         -0.03226476      -0.01903652
+## DAMAGE_PROPERTY_NUM      -0.032264763          1.00000000       0.46357982
+## DAMAGE_CROPS_NUM         -0.019036517          0.46357982       1.00000000</code></pre>
+<pre class="r"><code>#median fatality by sex
+storm_dam %&gt;% group_by(FATALITY_SEX) %&gt;% 
+  summarize(age_median = median(FATALITY_AGE, na.rm = T)) %&gt;% 
+  glimpse() </code></pre>
+<pre><code>## Observations: 2
+## Variables: 2
+## $ FATALITY_SEX &lt;chr&gt; &quot;F&quot;, &quot;M&quot;
+## $ age_median   &lt;dbl&gt; 53, 53</code></pre>
+<pre class="r"><code>#gender sepcific deaths by state
+storm_dam %&gt;% 
+  group_by(STATE, FATALITY_SEX) %&gt;% 
+  summarize(state_gender_deaths = n())</code></pre>
+<pre><code>## # A tibble: 85 x 3
+## # Groups:   STATE [49]
+##    STATE       FATALITY_SEX state_gender_deaths
+##    &lt;chr&gt;       &lt;chr&gt;                      &lt;int&gt;
+##  1 ALABAMA     F                              1
+##  2 ALABAMA     M                              4
+##  3 ARIZONA     F                              1
+##  4 ARIZONA     M                              5
+##  5 ARKANSAS    M                              7
+##  6 CALIFORNIA  F                              3
+##  7 CALIFORNIA  M                             15
+##  8 COLORADO    F                              1
+##  9 COLORADO    M                              1
+## 10 CONNECTICUT F                              1
+## # ... with 75 more rows</code></pre>
+<pre class="r"><code>#a look at the state repoted deaths: note this only takes into account deaths repoted in full to NOAA
+storm_dam %&gt;%
+  group_by(STATE) %&gt;% 
+  summarize(events = n()) %&gt;% arrange(desc(events))</code></pre>
+<pre><code>## # A tibble: 49 x 2
+##    STATE          events
+##    &lt;chr&gt;           &lt;int&gt;
+##  1 NEVADA            125
+##  2 FLORIDA            71
+##  3 NORTH CAROLINA     48
+##  4 MISSOURI           27
+##  5 TEXAS              27
+##  6 WISCONSIN          26
+##  7 CALIFORNIA         18
+##  8 VIRGINIA           16
+##  9 OREGON             13
+## 10 KENTUCKY           12
+## # ... with 39 more rows</code></pre>
+<pre class="r"><code>#a look at the state with the most deaths
+storm_dam %&gt;% 
+  filter(STATE == &quot;NEVADA&quot;) %&gt;% 
+  group_by(EVENT_TYPE) %&gt;% 
+  summarize(events = n())</code></pre>
+<pre><code>## # A tibble: 5 x 2
+##   EVENT_TYPE      events
+##   &lt;chr&gt;            &lt;int&gt;
+## 1 Cold/Wind Chill      4
+## 2 Excessive Heat      47
+## 3 Heat                72
+## 4 Heavy Rain           1
+## 5 Strong Wind          1</code></pre>
+<pre class="r"><code>#deaths by event type: note this only takes into account deaths repoted in full to NOAA
+storm_dam %&gt;% 
+  group_by(EVENT_TYPE) %&gt;% 
+  summarize(deaths = n()) %&gt;%  
+  arrange(desc(deaths))</code></pre>
+<pre><code>## # A tibble: 31 x 2
+##    EVENT_TYPE        deaths
+##    &lt;chr&gt;              &lt;int&gt;
+##  1 Heat                  87
+##  2 Flash Flood           54
+##  3 Rip Current           53
+##  4 Winter Weather        51
+##  5 Excessive Heat        48
+##  6 Hurricane             37
+##  7 Thunderstorm Wind     36
+##  8 Flood                 26
+##  9 Cold/Wind Chill       18
+## 10 Lightning             18
+## # ... with 21 more rows</code></pre>
+<pre class="r"><code>#cost by storm event
+storm_dam %&gt;% 
+  group_by(EVENT_TYPE) %&gt;% 
+  summarize(sum_cost = round(max(DAMAGE_PROPERTY_NUM + DAMAGE_CROPS_NUM))) %&gt;% 
+  arrange(desc(sum_cost))</code></pre>
+<pre><code>## # A tibble: 31 x 2
+##    EVENT_TYPE        sum_cost
+##    &lt;chr&gt;                &lt;dbl&gt;
+##  1 Hurricane         80000000
+##  2 Storm Surge/Tide  70000000
+##  3 Flash Flood       10000000
+##  4 Tornado            6500000
+##  5 Coastal Flood       900000
+##  6 Debris Flow         550000
+##  7 Dust Storm          500000
+##  8 High Wind           500000
+##  9 Flood               375000
+## 10 Thunderstorm Wind   250000
+## # ... with 21 more rows</code></pre>
+<pre class="r"><code>#deaths per event
+storm_dam %&gt;% 
+  group_by(EVENT_ID) %&gt;% 
+  summarize(deaths = max(DEATHS_DIRECT+DEATHS_INDIRECT)) %&gt;% 
+  arrange(desc(deaths))  </code></pre>
+<pre><code>## # A tibble: 359 x 2
+##    EVENT_ID deaths
+##       &lt;dbl&gt;  &lt;dbl&gt;
+##  1   779162     18
+##  2   773537     17
+##  3   775196     17
+##  4   789475     16
+##  5   779120     10
+##  6   773532      9
+##  7   773530      8
+##  8   773534      7
+##  9   779141      7
+## 10   773535      6
+## # ... with 349 more rows</code></pre>
+<pre class="r"><code>#a look at event with the most deaths
+
+storm_dam %&gt;% 
+  filter(EVENT_ID == 779162 ) %&gt;%
+  select(STATE, EVENT_TYPE)</code></pre>
+<pre><code>## # A tibble: 18 x 2
+##    STATE  EVENT_TYPE
+##    &lt;chr&gt;  &lt;chr&gt;     
+##  1 NEVADA Heat      
+##  2 NEVADA Heat      
+##  3 NEVADA Heat      
+##  4 NEVADA Heat      
+##  5 NEVADA Heat      
+##  6 NEVADA Heat      
+##  7 NEVADA Heat      
+##  8 NEVADA Heat      
+##  9 NEVADA Heat      
+## 10 NEVADA Heat      
+## 11 NEVADA Heat      
+## 12 NEVADA Heat      
+## 13 NEVADA Heat      
+## 14 NEVADA Heat      
+## 15 NEVADA Heat      
+## 16 NEVADA Heat      
+## 17 NEVADA Heat      
+## 18 NEVADA Heat</code></pre>
+<pre class="r"><code>#state by deaths indirect and direct
+storm_dam %&gt;% group_by(EVENT_ID, STATE) %&gt;% 
+  summarize(deaths = max(DEATHS_DIRECT + DEATHS_INDIRECT), 
+            cost = max(DAMAGE_PROPERTY_NUM + DAMAGE_CROPS_NUM)) %&gt;% 
+  ungroup() %&gt;%group_by(STATE) %&gt;% 
+  summarize(cost = sum(cost), 
+            deaths = sum(deaths))</code></pre>
+<pre><code>## # A tibble: 49 x 3
+##    STATE               cost deaths
+##    &lt;chr&gt;              &lt;dbl&gt;  &lt;dbl&gt;
+##  1 ALABAMA                0      5
+##  2 ARIZONA            65000      6
+##  3 ARKANSAS           50000      7
+##  4 CALIFORNIA        250000     28
+##  5 COLORADO          500000      2
+##  6 CONNECTICUT       205000      2
+##  7 E PACIFIC              0      1
+##  8 FLORIDA        485000000     69
+##  9 GEORGIA         80000000      3
+## 10 GULF OF MEXICO         0      1
+## # ... with 39 more rows</code></pre>
+<pre class="r"><code>#maximum deaths per in a month 
+storm_dam %&gt;% group_by(MONTH_NAME) %&gt;% 
+  summarize(deaths = max(DEATHS_DIRECT+DEATHS_INDIRECT))</code></pre>
+<pre><code>## # A tibble: 12 x 2
+##    MONTH_NAME deaths
+##    &lt;chr&gt;       &lt;dbl&gt;
+##  1 April           2
+##  2 August         18
+##  3 December        2
+##  4 February        4
+##  5 January         2
+##  6 July           17
+##  7 June            4
+##  8 March           3
+##  9 May             2
+## 10 November        4
+## 11 October        16
+## 12 September       2</code></pre>
+<pre class="r"><code>#even and gender summaries
+storm_dam %&gt;% group_by(EVENT_TYPE, FATALITY_SEX) %&gt;% 
+  summarize(age_mean = mean(FATALITY_AGE), 
+            age_sd = sd(FATALITY_AGE), 
+            deaths = n(), 
+            age_se = age_sd/sqrt(deaths))</code></pre>
+<pre><code>## # A tibble: 55 x 6
+## # Groups:   EVENT_TYPE [31]
+##    EVENT_TYPE      FATALITY_SEX age_mean age_sd deaths age_se
+##    &lt;chr&gt;           &lt;chr&gt;           &lt;dbl&gt;  &lt;dbl&gt;  &lt;int&gt;  &lt;dbl&gt;
+##  1 Avalanche       M                36.2   8.52      6   3.48
+##  2 Blizzard        F                37   NaN         1 NaN   
+##  3 Blizzard        M                62.5   2.12      2   1.50
+##  4 Coastal Flood   M                46   NaN         1 NaN   
+##  5 Cold/Wind Chill F                65.1  15.6       7   5.91
+##  6 Cold/Wind Chill M                46    16.6      11   5.01
+##  7 Debris Flow     F                62.5   4.95      2   3.50
+##  8 Debris Flow     M                68   NaN         1 NaN   
+##  9 Dense Fog       F                53   NaN         1 NaN   
+## 10 Dense Fog       M                36.4  24.9       5  11.2 
+## # ... with 45 more rows</code></pre>
+<p>Unsurprisingly crop and property damage are the most correlated. Direct injuries is the negatively correlated varibale.The median age for both males and females is 53. Males represent most of the deaths and Nevada has the most male and female deaths. An overwelling majority of the deaths in Nevada where heat related. In fact heat, at 86 deaths, was the leading cause of death followed by flash floods at 54 and rip currents at 53. Sleet, coastal flood, and marine thunderstorm wind all kill 1 person.Hurricane caused the most damage at 80,000,000 dollars followed by storm surge/tide at 70,000,000 dollars. Many storm types including heat had 0 dollar damage including heat. The event with the ID 779162 had the most deaths at 18. This event was a Heat related and happened in Nevada. As previously suggested deaths and cost seem to be weakly correlated. Florida had most damage and a significant amount of deaths. August and July had the most deaths at 18 and 17, repectively. As prevouisly suggested males tend to die to weather events more than females. Most events have a mean age of greater than 40. The standard error for many events is high due to low sample size and high varibale between death, this is exaterbated in females since they have a lower sample size. Some events have only one death associated and therefore no standard devation.</p>
+<pre class="r"><code>storm_dam %&gt;% 
+  group_by(EVENT_ID, MONTH_NAME) %&gt;% 
+  summarize(deaths = max(DEATHS_DIRECT + DEATHS_INDIRECT), 
+            cost = max(DAMAGE_PROPERTY_NUM + DAMAGE_CROPS_NUM)) %&gt;% 
+  ungroup() %&gt;% group_by(MONTH_NAME) %&gt;%
+  summarize(events = n(), 
+            deaths = sum(deaths), 
+            cost = sum(cost)) %&gt;%
+  ggplot(aes(deaths, cost, color = MONTH_NAME)) + 
+  geom_point(aes(size = events))+ 
+  scale_x_log10() + 
+  scale_y_log10() + 
+  theme(legend.key.size = unit(0.30, &quot;cm&quot;),
+        legend.key.width = unit(0.30,&quot;cm&quot;),
+        legend.title = element_text(size=10, 
+                                    face=&quot;bold&quot;)) + 
+  labs(x = &quot;Total Deaths&quot;, 
+       y = &quot;Total Cost&quot;, 
+       color=&#39;Month&#39;, 
+       size = &#39;Events&#39;) </code></pre>
+<p><img src="/Project1_files/figure-html/unnamed-chunk-8-1.png" width="672" /> Total cost and death by month are not necessarily related, August and July are prime examples as heat related deaths are common place.October sees a relatively high amount of damage and deaths, likely due to hurricane season. March seems to have the least amount of events and low deaths. October seems to be an outliner in costs, likely due to a hurricane which cause massive amounts of damage.</p>
+<pre class="r"><code>storm_dam %&gt;% group_by(EVENT_TYPE, FATALITY_SEX) %&gt;% 
+  summarize(age_mean = mean(FATALITY_AGE), age_sd = sd(FATALITY_AGE), deaths = n(), age_se = age_sd/sqrt(deaths)) %&gt;%
+  ggplot(aes(reorder(EVENT_TYPE, -age_mean), age_mean)) + 
+  geom_bar(stat = &quot;identity&quot;, aes(fill = deaths)) + 
+  geom_errorbar(aes(ymin = age_mean - age_se, ymax = age_mean + age_se), color = &quot;black&quot;) + 
+  theme_classic() + 
+  coord_flip() + 
+  ylab(&quot;Mean Age at Death&quot;) + 
+  xlab(&quot;Event Type&quot;) + 
+  facet_wrap(~FATALITY_SEX)</code></pre>
+<pre><code>## Warning: Removed 10 rows containing missing values (geom_errorbar).</code></pre>
+<p><img src="/Project1_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
+<p>Missing values indicate no deaths reported, missing error bars indicate a single death was reported. In most cases, reported male deaths outnumber females. Most events are associated with an mean age greater than 40. Overall the data for males in more conclusive since more males are in the data set. Generally the events that have low death associations have a low mean age. Rip currents is an execption and seems to effect younger indivduals at a high rate of deaths. This makes sense since younger indivduals are more often at the beach.</p>
+<pre class="r"><code>#selecting and feeding data to princomp
+pca_data &lt;- storm_dam %&gt;% mutate(FATALITY_SEX_NUM = 
+           case_when(FATALITY_SEX == &quot;M&quot; ~ 1, 
+                     FATALITY_SEX == &quot;F&quot; ~ 0)) %&gt;%
+  select(FATALITY_AGE, DEATHS_DIRECT, DEATHS_INDIRECT, 
+         INJURIES_DIRECT, INJURIES_INDIRECT, 
+         DAMAGE_PROPERTY_NUM, DAMAGE_CROPS_NUM, 
+         FATALITY_SEX_NUM, FAT_DAY) %&gt;% 
+  scale() %&gt;% princomp()
+  
+summary(pca_data, loadings = T)</code></pre>
+<pre><code>## Importance of components:
+##                           Comp.1    Comp.2    Comp.3    Comp.4    Comp.5
+## Standard deviation     1.3224566 1.1219781 1.0753811 1.0443552 0.9638386
+## Proportion of Variance 0.1946765 0.1401263 0.1287288 0.1214080 0.1034092
+## Cumulative Proportion  0.1946765 0.3348028 0.4635315 0.5849395 0.6883487
+##                            Comp.6    Comp.7     Comp.8     Comp.9
+## Standard deviation     0.92296231 0.8956788 0.84583203 0.65590495
+## Proportion of Variance 0.09482408 0.0893008 0.07963775 0.04788864
+## Cumulative Proportion  0.78317281 0.8724736 0.95211136 1.00000000
+## 
+## Loadings:
+##                     Comp.1 Comp.2 Comp.3 Comp.4 Comp.5 Comp.6 Comp.7 Comp.8
+## FATALITY_AGE         0.320  0.484  0.122         0.211  0.292  0.518  0.494
+## DEATHS_DIRECT               0.575 -0.164  0.323  0.233 -0.198 -0.644  0.160
+## DEATHS_INDIRECT      0.474  0.302 -0.107 -0.316  0.101 -0.148        -0.612
+## INJURIES_DIRECT     -0.125 -0.305 -0.347 -0.145  0.840 -0.154  0.113       
+## INJURIES_INDIRECT                  0.602 -0.391  0.309  0.459 -0.418       
+## DAMAGE_PROPERTY_NUM  0.610 -0.183         0.219  0.116               -0.193
+## DAMAGE_CROPS_NUM     0.424 -0.449  0.120  0.428               -0.213  0.226
+## FATALITY_SEX_NUM                  -0.666 -0.147 -0.160  0.675 -0.204       
+## FAT_DAY             -0.314  0.106         0.607  0.224  0.400  0.201 -0.507
+##                     Comp.9
+## FATALITY_AGE              
+## DEATHS_DIRECT             
+## DEATHS_INDIRECT      0.406
+## INJURIES_DIRECT           
+## INJURIES_INDIRECT         
+## DAMAGE_PROPERTY_NUM -0.703
+## DAMAGE_CROPS_NUM     0.568
+## FATALITY_SEX_NUM          
+## FAT_DAY</code></pre>
+<pre class="r"><code>eigval&lt;-pca_data$sdev^2 #square to convert SDs to eigenvalues
+varprop=round(eigval/sum(eigval),2) #proportion of var explained by each PC
+
+#scree plot
+ggplot()+geom_bar(aes(y=varprop,x=1:9),stat=&quot;identity&quot;)+xlab(&quot;&quot;)+geom_path(aes(y=varprop,x=1:9))+
+  geom_text(aes(x=1:9,y=varprop,label=round(varprop,2)),vjust=1,col=&quot;white&quot;,size=5)+
+  scale_y_continuous(breaks=seq(0,.6,.2),labels = scales::percent)+
+  scale_x_continuous(breaks=1:10)</code></pre>
+<p><img src="/Project1_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
+<pre class="r"><code>#PCA rotation 1 and 2 plotted scores
+pca &lt;- as.data.frame(pca_data$scores)
+rownames(pca) &lt;- storm_dam$FATALITY_ID
+pca %&gt;% ggplot(aes(Comp.1, Comp.2)) + 
+  geom_point(aes(color = storm_dam$EVENT_TYPE))+
+  theme(legend.key.size = unit(0.30, &quot;cm&quot;),legend.key.width = unit(0.30,&quot;cm&quot;),
+        legend.title = element_text(size=10, face=&quot;bold&quot;)) + labs(color = &quot;Event Type&quot;)</code></pre>
+<p><img src="/Project1_files/figure-html/unnamed-chunk-10-2.png" width="672" /></p>
+<pre class="r"><code>#taking a peak at the PCA 1 data high scoring cluster 
+peak &lt;- pca %&gt;% subset(Comp.1 &gt; 2.5) 
+peak &lt;- storm_dam %&gt;% filter(FATALITY_ID %in% rownames(peak))
+peak</code></pre>
+<pre><code>## # A tibble: 36 x 39
+##    FAT_YEARMONTH FAT_DAY FAT_TIME FATALITY_ID EVENT_ID FATALITY_TYPE
+##            &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;       &lt;dbl&gt;    &lt;dbl&gt; &lt;chr&gt;        
+##  1        201810      10        0       36701   790424 D            
+##  2        201810      10        0       36702   790424 D            
+##  3        201810      10        0       36703   790424 D            
+##  4        201810      10        0       36704   790424 D            
+##  5        201810      10        0       36705   790424 D            
+##  6        201810      10        0       36706   790424 D            
+##  7        201810      10        0       36723   789475 I            
+##  8        201810      10        0       36724   789475 I            
+##  9        201810      10        0       36725   789475 I            
+## 10        201810      10        0       36726   789475 I            
+## # ... with 26 more rows, and 33 more variables: FATALITY_DATE &lt;chr&gt;,
+## #   FATALITY_AGE &lt;dbl&gt;, FATALITY_SEX &lt;chr&gt;, FATALITY_LOCATION &lt;chr&gt;,
+## #   EVENT_YEARMONTH &lt;dbl&gt;, BEGIN_YEARMONTH &lt;dbl&gt;, BEGIN_DAY &lt;dbl&gt;,
+## #   BEGIN_TIME &lt;dbl&gt;, END_YEARMONTH &lt;dbl&gt;, END_DAY &lt;dbl&gt;, END_TIME &lt;dbl&gt;,
+## #   EPISODE_ID &lt;dbl&gt;, STATE &lt;chr&gt;, STATE_FIPS &lt;dbl&gt;, YEAR &lt;dbl&gt;,
+## #   MONTH_NAME &lt;chr&gt;, EVENT_TYPE &lt;chr&gt;, CZ_TYPE &lt;chr&gt;, CZ_FIPS &lt;dbl&gt;,
+## #   CZ_NAME &lt;chr&gt;, WFO &lt;chr&gt;, BEGIN_DATE_TIME &lt;chr&gt;, CZ_TIMEZONE &lt;chr&gt;,
+## #   END_DATE_TIME &lt;chr&gt;, INJURIES_DIRECT &lt;dbl&gt;, INJURIES_INDIRECT &lt;dbl&gt;,
+## #   DEATHS_DIRECT &lt;dbl&gt;, DEATHS_INDIRECT &lt;dbl&gt;, DAMAGE_PROPERTY &lt;chr&gt;,
+## #   DAMAGE_CROPS &lt;chr&gt;, SOURCE &lt;chr&gt;, DAMAGE_PROPERTY_NUM &lt;dbl&gt;,
+## #   DAMAGE_CROPS_NUM &lt;dbl&gt;</code></pre>
+<pre class="r"><code>#taking a look at PCA 2 data high cluster 
+peak &lt;- pca %&gt;% subset(Comp.2 &gt; 2) 
+peak &lt;- storm_dam %&gt;% filter(FATALITY_ID %in% rownames(peak))
+peak</code></pre>
+<pre><code>## # A tibble: 37 x 39
+##    FAT_YEARMONTH FAT_DAY FAT_TIME FATALITY_ID EVENT_ID FATALITY_TYPE
+##            &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;       &lt;dbl&gt;    &lt;dbl&gt; &lt;chr&gt;        
+##  1        201807      25        0       35761   773537 I            
+##  2        201807      28        0       35773   773537 D            
+##  3        201807      24        0       35760   773537 D            
+##  4        201807      25        0       35762   773537 I            
+##  5        201807      26        0       35764   773537 D            
+##  6        201807      26        0       35765   773537 D            
+##  7        201807      26        0       35766   773537 D            
+##  8        201807      28        0       35771   773537 D            
+##  9        201807      28        0       35772   773537 D            
+## 10        201807      25        0       35763   773537 D            
+## # ... with 27 more rows, and 33 more variables: FATALITY_DATE &lt;chr&gt;,
+## #   FATALITY_AGE &lt;dbl&gt;, FATALITY_SEX &lt;chr&gt;, FATALITY_LOCATION &lt;chr&gt;,
+## #   EVENT_YEARMONTH &lt;dbl&gt;, BEGIN_YEARMONTH &lt;dbl&gt;, BEGIN_DAY &lt;dbl&gt;,
+## #   BEGIN_TIME &lt;dbl&gt;, END_YEARMONTH &lt;dbl&gt;, END_DAY &lt;dbl&gt;, END_TIME &lt;dbl&gt;,
+## #   EPISODE_ID &lt;dbl&gt;, STATE &lt;chr&gt;, STATE_FIPS &lt;dbl&gt;, YEAR &lt;dbl&gt;,
+## #   MONTH_NAME &lt;chr&gt;, EVENT_TYPE &lt;chr&gt;, CZ_TYPE &lt;chr&gt;, CZ_FIPS &lt;dbl&gt;,
+## #   CZ_NAME &lt;chr&gt;, WFO &lt;chr&gt;, BEGIN_DATE_TIME &lt;chr&gt;, CZ_TIMEZONE &lt;chr&gt;,
+## #   END_DATE_TIME &lt;chr&gt;, INJURIES_DIRECT &lt;dbl&gt;, INJURIES_INDIRECT &lt;dbl&gt;,
+## #   DEATHS_DIRECT &lt;dbl&gt;, DEATHS_INDIRECT &lt;dbl&gt;, DAMAGE_PROPERTY &lt;chr&gt;,
+## #   DAMAGE_CROPS &lt;chr&gt;, SOURCE &lt;chr&gt;, DAMAGE_PROPERTY_NUM &lt;dbl&gt;,
+## #   DAMAGE_CROPS_NUM &lt;dbl&gt;</code></pre>
+<pre class="r"><code>#taking a look at PCA 2 data lower cluster 
+peak &lt;- pca %&gt;% subset(Comp.2 &lt; -2) 
+peak &lt;- storm_dam %&gt;% filter(FATALITY_ID %in% rownames(peak))
+peak</code></pre>
+<pre><code>## # A tibble: 17 x 39
+##    FAT_YEARMONTH FAT_DAY FAT_TIME FATALITY_ID EVENT_ID FATALITY_TYPE
+##            &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;       &lt;dbl&gt;    &lt;dbl&gt; &lt;chr&gt;        
+##  1        201807       9        0       35883   766986 D            
+##  2        201801      15        0       37854   727489 I            
+##  3        201801      15        0       37855   727489 I            
+##  4        201810      10        0       37777   790378 I            
+##  5        201810      10        0       36745   790381 D            
+##  6        201810      10        0       36746   790381 I            
+##  7        201810      10        0       36747   790382 I            
+##  8        201810      10        0       36748   790382 I            
+##  9        201810      10        0       36749   790383 I            
+## 10        201810      10        0       36750   790384 D            
+## 11        201810      10        0       36751   790384 I            
+## 12        201810      10        0       36752   790384 I            
+## 13        201810      10        0       36753   790384 I            
+## 14        201810      10        0       36754   790385 I            
+## 15        201810      10        0       36755   790385 I            
+## 16        201810      10        0       36756   790385 I            
+## 17        201810      10        0       36790   790398 D            
+## # ... with 33 more variables: FATALITY_DATE &lt;chr&gt;, FATALITY_AGE &lt;dbl&gt;,
+## #   FATALITY_SEX &lt;chr&gt;, FATALITY_LOCATION &lt;chr&gt;, EVENT_YEARMONTH &lt;dbl&gt;,
+## #   BEGIN_YEARMONTH &lt;dbl&gt;, BEGIN_DAY &lt;dbl&gt;, BEGIN_TIME &lt;dbl&gt;,
+## #   END_YEARMONTH &lt;dbl&gt;, END_DAY &lt;dbl&gt;, END_TIME &lt;dbl&gt;, EPISODE_ID &lt;dbl&gt;,
+## #   STATE &lt;chr&gt;, STATE_FIPS &lt;dbl&gt;, YEAR &lt;dbl&gt;, MONTH_NAME &lt;chr&gt;,
+## #   EVENT_TYPE &lt;chr&gt;, CZ_TYPE &lt;chr&gt;, CZ_FIPS &lt;dbl&gt;, CZ_NAME &lt;chr&gt;, WFO &lt;chr&gt;,
+## #   BEGIN_DATE_TIME &lt;chr&gt;, CZ_TIMEZONE &lt;chr&gt;, END_DATE_TIME &lt;chr&gt;,
+## #   INJURIES_DIRECT &lt;dbl&gt;, INJURIES_INDIRECT &lt;dbl&gt;, DEATHS_DIRECT &lt;dbl&gt;,
+## #   DEATHS_INDIRECT &lt;dbl&gt;, DAMAGE_PROPERTY &lt;chr&gt;, DAMAGE_CROPS &lt;chr&gt;,
+## #   SOURCE &lt;chr&gt;, DAMAGE_PROPERTY_NUM &lt;dbl&gt;, DAMAGE_CROPS_NUM &lt;dbl&gt;</code></pre>
+<pre class="r"><code>#biplot 
+fviz_pca_biplot(pca_data)</code></pre>
+<p><img src="/Project1_files/figure-html/unnamed-chunk-10-3.png" width="672" /></p>
+<p>PCA 1 and 2 explain a small portion of the variance. Six principal components are needed to explain roughly 80% of the variantion in the data. However only the first two will be analysis here. Observations that score high on PCA 1 are of a high age. These individuals also died in a storm with high indirect deaths, property damage, crop damage, and low direct injuries. Looking at the score plot for PCA 1 and PCA 2 most storm related fatalities cluster together, however, several smaller clusters are seen. The most distinguishable it the cluster that ranks high on PCA 1. Theses scores belong to hurriances and storm surges(hurricane related). This PCA is most likely picking up on the largescale nature of hurricanes which is assocaited with high damage costs. Observation that score high on PCA 2 are fatalities associated with high age and all types of deaths. Additionally they are assocaited with low damage cost and direct injuries. Most of the high scoring fatalities are associated with heat or thunderstorms.</p>
+</div>
+
+              <hr>
+              <div class="related-posts">
+                <h5>Related Posts</h5>
+                
+              </div>
+            </div>
+          </div>
+          <hr>
+        <div class="disqus">
+  <div id="disqus_thread"></div>
+  <script type="text/javascript">
+
+    (function() {
+      
+      
+      if (window.location.hostname == "localhost")
+        return;
+
+      var disqus_shortname = '';
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  <a href="http://disqus.com/" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+        </div>
+      </div>
+      
+    </div>
+
+    
+    <footer>
+  <div id="footer">
+    <div class="container">
+      <p class="text-muted">&copy; All rights reserved. Powered by <a href="https://gohugo.io/">Hugo</a> and
+      <a href="http://www.github.com/nurlansu/hugo-sustain/">sustain</a> with ♥</p>
+    </div>
+  </div>
+</footer>
+<div class="footer"></div>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="/js/docs.min.js"></script>
+<script src="/js/main.js"></script>
+
+<script src="/js/ie10-viewport-bug-workaround.js"></script>
+
+
+    
+  </body>
+</html>

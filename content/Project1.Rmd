@@ -1,0 +1,270 @@
+---
+title: "Project 1: 2018 Storm Related Deaths"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+
+The first data set I have choosen reports storm event details that happened in the United States in 2018, gathered by the NOAA. This data set contains a multitude of information such as time information, state, event type, culmintive injuries, culminative deaths, damage cost, and event type descriptors. The second dataset reports details for storm related deaths in 2018 also gathered by the NOAA. This dataset contains information for each indivdual death such as sex, age, fataility type, and loction description. It should be noted this dataset only contains deaths with details that have been reported to NOAA, therefore, the number of total deaths for a event may be larger than the reported amount in the fatalities dataset. As such, the number of deaths reported events details dataset is likely larger since it is all encompassing. Both datasets report event id allowing me to combine event details to fatality details. The recent surge in storm events is likely related to climate change. I wanted to develope an understanding of how such events affect people. I decided on 2018 as it is the most recent year with full information. I'm expecting to find a relationship between event deaths and coastal states as I predicte hurranicanes are the most destructive events.
+
+##Data Processing
+###Importing the data and loading packages:
+```{r}
+library(ggplot2)
+library(readr)
+library(dplyr)
+library(tidyr)
+library(factoextra)
+#data importing 
+stormevents_fata <- read_csv("https://www1.ncdc.noaa.gov/pub/data/swdi/stormevents/csvfiles/StormEvents_fatalities-ftp_v1.0_d2018_c20191116.csv.gz")
+stormevents_details <- read_csv("https://www1.ncdc.noaa.gov/pub/data/swdi/stormevents/csvfiles/StormEvents_details-ftp_v1.0_d2018_c20191116.csv.gz")
+
+#intial look
+stormevents_details %>% glimpse()
+stormevents_fata %>% glimpse()
+```
+Looking at the data we see both are in tidy format, each column is a variable and each row is a unique observation.
+
+### Making the data untidy:
+```{r}
+#making data wider
+fata_wider <- pivot_wider(stormevents_fata, 
+                         names_from = c("FATALITY_SEX", "FATALITY_TYPE"), 
+                         values_from = "EVENT_ID")
+fata_wider %>% glimpse()
+```
+This block is pivoting the variables fatatilty sex and fatality type and making in into a wider format. 
+
+### Making he data tidy:
+```{r}
+#making data longer again
+stormevents_fata_tidy <- pivot_longer(fata_wider, 
+                                     cols = c("F_I", "M_I","F_D","M_D","NA_D","NA_I"), 
+                                     names_to = "details", 
+                                     values_to = "EVENT_ID") %>%
+  separate(details, into = c("FATALITY_SEX" ,"FATALITY_TYPE")) %>% 
+  filter(EVENT_ID != is.na(EVENT_ID))
+```
+Here, the wide data is being gathered back into fatality sex and type.
+
+
+### Data cleaning:
+```{r}
+stormevents_fata_tidy %>% glimpse()
+
+#making data tidy by removing redundant or unwanted rows
+#dropping colums containing mostly NAs
+stormevents_details %>% select(contains("TOR")) %>% na.omit() %>% glimpse()
+stormevents_details <- stormevents_details %>% select(-contains("TOR")) %>% select(-contains("MAGNITUDE")) %>% select(-contains("CATEGORY")) %>% select(-contains("FLOOD")) %>% select(-c("BEGIN_RANGE":"END_LON") )
+
+# droping narative cols <- contain description of event and data source col that just contains csv
+stormevents_details <- stormevents_details %>% select(-contains("NARRATIVE")) %>% select(-contains("DATA_SOURCE"))
+
+```
+The code above some unwanted data from storm details. Much of these such as TOR (torando related) and category (hurricane related) don't apply to most of the data. Additionally, data source and narrative is dropped for being pointless.
+
+
+### Data joining:
+```{r}
+#joining all data with fatailities 
+storm_fata_detail<- left_join(stormevents_fata, stormevents_details, by= "EVENT_ID")
+storm_fata_detail %>% glimpse()
+storm <- na.omit(storm_fata_detail)
+
+```
+This code joins the fatality dataset to the storm details dataset via a left join, meaning only storms with reported fatalities in the fatatlites dataset are kept. Though this eliminates storm without fatalities it also eliminates storms with fatalities not reported to the NOAA in detail allowing for potential basis in later reports. 
+
+
+## Data Exploration
+```{r}
+#forming property damage into a numeric variable -> maintains original variable
+storm_dam <- storm %>% 
+  separate(DAMAGE_PROPERTY, sep = -1, into = c("num", "order")) %>%
+  mutate(DAMAGE_PROPERTY_NUM = 
+           case_when(order == "M" ~ as.numeric(num) * 100000, 
+                     order == "K" ~ as.integer(num) * 1000)) %>% 
+  unite(col = "DAMAGE_PROPERTY", c("num", "order"), sep = "")
+
+#forming crop damage into numeric variable -> maintains original variable
+storm_dam <- storm_dam %>% 
+  separate(DAMAGE_CROPS, sep = -1, into = c("num", "order")) %>% 
+  mutate(DAMAGE_CROPS_NUM = 
+           case_when(order == "M" ~ as.numeric(num) * 100000, 
+                     order == "K" ~ as.integer(num) * 1000)) %>% 
+  unite(col = "DAMAGE_CROPS", c("num", "order"), sep = "")
+```
+Turning categorical damage data into numerical for allow better intrepretaion. Case when was used determine the magnitude of multiplication needed to give the appropriate value. The categorical representation is retained for comparison.
+
+```{r}
+#correlation between numerical
+storm_dam %>% select(FATALITY_AGE, DEATHS_DIRECT, DEATHS_INDIRECT, INJURIES_DIRECT, INJURIES_INDIRECT, DAMAGE_PROPERTY_NUM, DAMAGE_CROPS_NUM) %>% cor()
+
+#median fatality by sex
+storm_dam %>% group_by(FATALITY_SEX) %>% 
+  summarize(age_median = median(FATALITY_AGE, na.rm = T)) %>% 
+  glimpse() 
+
+#gender sepcific deaths by state
+storm_dam %>% 
+  group_by(STATE, FATALITY_SEX) %>% 
+  summarize(state_gender_deaths = n())
+
+#a look at the state repoted deaths: note this only takes into account deaths repoted in full to NOAA
+storm_dam %>%
+  group_by(STATE) %>% 
+  summarize(events = n()) %>% arrange(desc(events))
+
+
+#a look at the state with the most deaths
+storm_dam %>% 
+  filter(STATE == "NEVADA") %>% 
+  group_by(EVENT_TYPE) %>% 
+  summarize(events = n())
+
+#deaths by event type: note this only takes into account deaths repoted in full to NOAA
+storm_dam %>% 
+  group_by(EVENT_TYPE) %>% 
+  summarize(deaths = n()) %>%  
+  arrange(desc(deaths))
+
+#cost by storm event
+storm_dam %>% 
+  group_by(EVENT_TYPE) %>% 
+  summarize(sum_cost = round(max(DAMAGE_PROPERTY_NUM + DAMAGE_CROPS_NUM))) %>% 
+  arrange(desc(sum_cost))
+
+#deaths per event
+storm_dam %>% 
+  group_by(EVENT_ID) %>% 
+  summarize(deaths = max(DEATHS_DIRECT+DEATHS_INDIRECT)) %>% 
+  arrange(desc(deaths))  
+
+#a look at event with the most deaths
+
+storm_dam %>% 
+  filter(EVENT_ID == 779162 ) %>%
+  select(STATE, EVENT_TYPE)
+
+#state by deaths indirect and direct
+storm_dam %>% group_by(EVENT_ID, STATE) %>% 
+  summarize(deaths = max(DEATHS_DIRECT + DEATHS_INDIRECT), 
+            cost = max(DAMAGE_PROPERTY_NUM + DAMAGE_CROPS_NUM)) %>% 
+  ungroup() %>%group_by(STATE) %>% 
+  summarize(cost = sum(cost), 
+            deaths = sum(deaths))
+
+#maximum deaths per in a month 
+storm_dam %>% group_by(MONTH_NAME) %>% 
+  summarize(deaths = max(DEATHS_DIRECT+DEATHS_INDIRECT))
+
+#even and gender summaries
+storm_dam %>% group_by(EVENT_TYPE, FATALITY_SEX) %>% 
+  summarize(age_mean = mean(FATALITY_AGE), 
+            age_sd = sd(FATALITY_AGE), 
+            deaths = n(), 
+            age_se = age_sd/sqrt(deaths))
+```
+Unsurprisingly crop and property damage are the most correlated. Direct injuries is the negatively correlated varibale.The median age for both males and females is 53. Males represent most of the deaths and Nevada has the most male and female deaths. An overwelling majority of the deaths in Nevada where heat related. In fact heat, at 86 deaths, was the leading cause of death followed by flash floods at 54 and rip currents at 53. Sleet, coastal flood, and marine thunderstorm wind all kill 1 person.Hurricane caused the most damage at 80,000,000 dollars followed by storm surge/tide at 70,000,000 dollars. Many storm types including heat had 0 dollar damage including heat. The event with the ID 779162 had the most deaths at 18. This event was a Heat related and happened in Nevada. As previously suggested deaths and cost seem to be weakly correlated. Florida had most damage and a significant amount of deaths. August and July had the most deaths at 18 and 17, repectively. As prevouisly suggested males tend to die to weather events more than females. Most events have a mean age of greater than 40. The standard error for many events is high due to low sample size and high varibale between death, this is exaterbated in females since they have a lower sample size. Some events have only one death associated and therefore no standard devation.
+
+
+```{r}
+
+storm_dam %>% 
+  group_by(EVENT_ID, MONTH_NAME) %>% 
+  summarize(deaths = max(DEATHS_DIRECT + DEATHS_INDIRECT), 
+            cost = max(DAMAGE_PROPERTY_NUM + DAMAGE_CROPS_NUM)) %>% 
+  ungroup() %>% group_by(MONTH_NAME) %>%
+  summarize(events = n(), 
+            deaths = sum(deaths), 
+            cost = sum(cost)) %>%
+  ggplot(aes(deaths, cost, color = MONTH_NAME)) + 
+  geom_point(aes(size = events))+ 
+  scale_x_log10() + 
+  scale_y_log10() + 
+  theme(legend.key.size = unit(0.30, "cm"),
+        legend.key.width = unit(0.30,"cm"),
+        legend.title = element_text(size=10, 
+                                    face="bold")) + 
+  labs(x = "Total Deaths", 
+       y = "Total Cost", 
+       color='Month', 
+       size = 'Events') 
+```
+Total cost and death by month are not necessarily related, August and July are prime examples as heat related deaths are common place.October sees a relatively high amount of damage and deaths, likely due to hurricane season. March seems to have the least amount of events and low deaths. October seems to be an outliner in costs, likely due to a hurricane which cause massive amounts of damage.
+
+
+
+```{r}
+
+storm_dam %>% group_by(EVENT_TYPE, FATALITY_SEX) %>% 
+  summarize(age_mean = mean(FATALITY_AGE), age_sd = sd(FATALITY_AGE), deaths = n(), age_se = age_sd/sqrt(deaths)) %>%
+  ggplot(aes(reorder(EVENT_TYPE, -age_mean), age_mean)) + 
+  geom_bar(stat = "identity", aes(fill = deaths)) + 
+  geom_errorbar(aes(ymin = age_mean - age_se, ymax = age_mean + age_se), color = "black") + 
+  theme_classic() + 
+  coord_flip() + 
+  ylab("Mean Age at Death") + 
+  xlab("Event Type") + 
+  facet_wrap(~FATALITY_SEX)
+
+
+```
+
+Missing values indicate no deaths reported, missing error bars indicate a single death was reported. In most cases, reported male deaths outnumber females. Most events are associated with an mean age greater than 40. Overall the data for males in more conclusive since more males are in the data set. Generally the events that have low death associations have a low mean age. Rip currents is an execption and seems to effect younger indivduals at a high rate of deaths. This makes sense since younger indivduals are more often at the beach. 
+
+```{r}
+
+#selecting and feeding data to princomp
+pca_data <- storm_dam %>% mutate(FATALITY_SEX_NUM = 
+           case_when(FATALITY_SEX == "M" ~ 1, 
+                     FATALITY_SEX == "F" ~ 0)) %>%
+  select(FATALITY_AGE, DEATHS_DIRECT, DEATHS_INDIRECT, 
+         INJURIES_DIRECT, INJURIES_INDIRECT, 
+         DAMAGE_PROPERTY_NUM, DAMAGE_CROPS_NUM, 
+         FATALITY_SEX_NUM, FAT_DAY) %>% 
+  scale() %>% princomp()
+  
+summary(pca_data, loadings = T)
+eigval<-pca_data$sdev^2 #square to convert SDs to eigenvalues
+varprop=round(eigval/sum(eigval),2) #proportion of var explained by each PC
+
+#scree plot
+ggplot()+geom_bar(aes(y=varprop,x=1:9),stat="identity")+xlab("")+geom_path(aes(y=varprop,x=1:9))+
+  geom_text(aes(x=1:9,y=varprop,label=round(varprop,2)),vjust=1,col="white",size=5)+
+  scale_y_continuous(breaks=seq(0,.6,.2),labels = scales::percent)+
+  scale_x_continuous(breaks=1:10)
+
+#PCA rotation 1 and 2 plotted scores
+pca <- as.data.frame(pca_data$scores)
+rownames(pca) <- storm_dam$FATALITY_ID
+pca %>% ggplot(aes(Comp.1, Comp.2)) + 
+  geom_point(aes(color = storm_dam$EVENT_TYPE))+
+  theme(legend.key.size = unit(0.30, "cm"),legend.key.width = unit(0.30,"cm"),
+        legend.title = element_text(size=10, face="bold")) + labs(color = "Event Type")
+
+#taking a peak at the PCA 1 data high scoring cluster 
+peak <- pca %>% subset(Comp.1 > 2.5) 
+peak <- storm_dam %>% filter(FATALITY_ID %in% rownames(peak))
+peak
+#taking a look at PCA 2 data high cluster 
+peak <- pca %>% subset(Comp.2 > 2) 
+peak <- storm_dam %>% filter(FATALITY_ID %in% rownames(peak))
+peak
+#taking a look at PCA 2 data lower cluster 
+peak <- pca %>% subset(Comp.2 < -2) 
+peak <- storm_dam %>% filter(FATALITY_ID %in% rownames(peak))
+peak
+
+
+#biplot 
+fviz_pca_biplot(pca_data)
+```
+
+PCA 1 and 2 explain a small portion of the variance. Six principal components are needed to explain roughly 80% of the variantion in the data. However only the first two will be analysis here. Observations that score high on PCA 1 are of a high age. These individuals also died in a storm with high indirect deaths, property damage, crop damage, and low direct injuries. Looking at the score plot for PCA 1 and PCA 2 most storm related fatalities cluster together, however, several smaller clusters are seen. The most distinguishable it the cluster that ranks high on PCA 1. Theses scores belong to hurriances and storm surges(hurricane related). This PCA is most likely picking up on the largescale nature of hurricanes which is assocaited with high damage costs. Observation that score high on PCA 2 are fatalities associated with high age and all types of deaths. Additionally they are assocaited with low damage cost and direct injuries. Most of the high scoring fatalities are associated with heat or thunderstorms. 
