@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="Brendan Panici" />
+    <meta name="description" content="A simple website for things I find interesting.">
+    <link rel="shortcut icon" type="image/x-icon" href="/img/favicon.ico">
+    <title>More than One way to Skin your Code- A Prespective on Python and R</title>
+    <meta name="generator" content="Hugo 0.60.1" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="/css/main.css" />
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,400,200bold,400old" />
+    
+    <!--[if lt IE 9]>
+			<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+			<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+
+    
+  </head>
+
+  <body>
+    <div id="wrap">
+
+      
+      <nav class="navbar navbar-default">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="/"><i class="fa fa-home"></i></a>
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <div class="navbar-collapse collapse" id="navbar">
+      <ul class="nav navbar-nav navbar-right">
+      
+        
+        <li><a href="/blog/">BLOG</a></li>
+        
+        <li><a href="/projects/">PROJECTS</a></li>
+        
+        <li><a href="/resume/">RESUME</a></li>
+        
+      
+      </ul>
+    </div>
+  </div>
+</nav>
+
+      
+      <div class="container">
+        <div class="blog-post">
+          <h3>
+            <strong><a href="/blog/a-prespective-on-python-and-r/">More than One way to Skin your Code- A Prespective on Python and R</a></strong>
+          </h3>
+        </div>
+        <div class="blog-title">
+          <h4>
+          December 14, 2019
+            &nbsp;&nbsp;
+            
+            <span class="label label-success">Python</span>
+            
+            <span class="label label-success">R</span>
+            
+          </h4>
+        </div>
+        <div class="panel panel-default">
+          <div class="panel-body">
+            <div class="blogpost">
+              
+
+
+<p>I was first introduced to computer programing through python. As I gradually became a better programer, I started working with R. At first I was bewildered by the languages high functionality and intricacies. Compared to python R seemed like a mess, unsure of what it really wanted to be. However, the more I became fimilar with R I realized it’s usefullness. Particulary, the R community is organized, connected, and receptive. Python on the otherhand feels often cold and disconnected. That being said, both languages can produce strikingly similar results.</p>
+<pre class="r"><code>head(faithful)</code></pre>
+<pre><code>##   eruptions waiting
+## 1     3.600      79
+## 2     1.800      54
+## 3     3.333      74
+## 4     2.283      62
+## 5     4.533      85
+## 6     2.883      55</code></pre>
+<pre class="r"><code># the standard deviation of the variable eruptions when waiting is less than the median
+sd(faithful[faithful$waiting &lt; median(faithful$waiting),&quot;eruptions&quot;])</code></pre>
+<pre><code>## [1] 0.9583443</code></pre>
+<pre class="r"><code># the standard deviation of the variable eruptions when waiting is greater than the median
+sd(faithful[faithful$waiting &gt; median(faithful$waiting),&quot;eruptions&quot;])</code></pre>
+<pre><code>## [1] 0.3730518</code></pre>
+<pre class="r"><code># conversion to minutes
+faithful$eruptions_m &lt;- faithful$eruptions/60
+faithful$waiting_m &lt;- faithful$waiting/60
+head(faithful)</code></pre>
+<pre><code>##   eruptions waiting eruptions_m waiting_m
+## 1     3.600      79     0.06000 1.3166667
+## 2     1.800      54     0.03000 0.9000000
+## 3     3.333      74     0.05555 1.2333333
+## 4     2.283      62     0.03805 1.0333333
+## 5     4.533      85     0.07555 1.4166667
+## 6     2.883      55     0.04805 0.9166667</code></pre>
+<pre class="r"><code>plot(faithful$eruptions, faithful$waiting,
+ main = &quot;Eruption Time vs Waiting Time&quot;,
+ xlab = &quot;Eruptions (min)&quot;,
+ ylab = &quot;Waiting (min)&quot;)</code></pre>
+<p><img src="/blog/2019-12-14-a-prespective-on-python_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
+<pre class="python"><code>import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+faithful=pd.read_csv(&quot;https://vincentarelbundock.github.io/Rdatasets/csv/datasets/faithful.csv&quot;)
+
+print(faithful.head())
+
+# the standard deviation of the variable eruptions when waiting is less than the median
+print(np.std(faithful[faithful.waiting &lt; np.median(faithful.waiting)].eruptions))
+
+# the standard deviation of the variable eruptions when waiting is greater than the median
+print(np.std(faithful[faithful.waiting &gt; np.median(faithful.waiting)].eruptions))
+
+# conversion to minutes 
+faithful[&#39;eruptions_h&#39;] = (faithful[&#39;eruptions&#39;]/60)
+faithful[&quot;waiting_h&quot;] = (faithful[&quot;waiting&quot;]/60)
+print(faithful.head())
+
+plt.scatter(faithful[&quot;waiting&quot;],faithful[&quot;eruptions&quot;])
+plt.title(&quot;Eruption Time vs Waiting Time&quot;)
+plt.xlabel(&quot;Eruptions (min)&quot;)
+plt.ylabel(&quot;Waiting (min)&quot;)
+plt.show()
+</code></pre>
+<pre><code>##    Unnamed: 0  eruptions  waiting
+## 0           1      3.600       79
+## 1           2      1.800       54
+## 2           3      3.333       74
+## 3           4      2.283       62
+## 4           5      4.533       85
+## 0.9547617317201805
+## 0.3716030836143554
+##    Unnamed: 0  eruptions  waiting  eruptions_h  waiting_h
+## 0           1      3.600       79      0.06000   1.316667
+## 1           2      1.800       54      0.03000   0.900000
+## 2           3      3.333       74      0.05555   1.233333
+## 3           4      2.283       62      0.03805   1.033333
+## 4           5      4.533       85      0.07555   1.416667</code></pre>
+<div class="figure">
+<img src="/blog/2019-12-14-a-prespective-on-python_files/py.png" />
+
+</div>
+
+              <hr>
+              <div class="related-posts">
+                <h5>Related Posts</h5>
+                
+              </div>
+            </div>
+          </div>
+          <hr>
+        <div class="disqus">
+  <div id="disqus_thread"></div>
+  <script type="text/javascript">
+
+    (function() {
+      
+      
+      if (window.location.hostname == "localhost")
+        return;
+
+      var disqus_shortname = '';
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  <a href="http://disqus.com/" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+        </div>
+      </div>
+      
+    </div>
+
+    
+    <footer>
+  <div id="footer">
+    <div class="container">
+      <p class="text-muted">&copy; All rights reserved. Powered by <a href="https://gohugo.io/">Hugo</a> and
+      <a href="http://www.github.com/nurlansu/hugo-sustain/">sustain</a> with ♥</p>
+    </div>
+  </div>
+</footer>
+<div class="footer"></div>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="/js/docs.min.js"></script>
+<script src="/js/main.js"></script>
+
+<script src="/js/ie10-viewport-bug-workaround.js"></script>
+
+
+    
+  </body>
+</html>

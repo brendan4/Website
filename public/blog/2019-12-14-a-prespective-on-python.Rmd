@@ -1,0 +1,67 @@
+---
+title: More than One way to Skin your Code- A Prespective on Python and R
+author: Brendan Panici
+date: '2019-12-14'
+slug: a-prespective-on-python-and-R
+categories: []
+tags: [Python, R]
+description: 'Python and R as a tools for biologists'
+---
+I was first introduced to computer programing through python. As I gradually became a better programer, I started working with R. At first I was bewildered by the languages high functionality and intricacies. Compared to python R seemed like a mess, unsure of what it really wanted to be. However, the more I became fimilar with R I realized it's usefullness. Particulary, the R community is organized, connected, and receptive. Python on the otherhand feels often cold and disconnected. That being said, both languages can produce strikingly similar results.
+
+```{r}
+head(faithful)
+
+# the standard deviation of the variable eruptions when waiting is less than the median
+sd(faithful[faithful$waiting < median(faithful$waiting),"eruptions"])
+
+# the standard deviation of the variable eruptions when waiting is greater than the median
+sd(faithful[faithful$waiting > median(faithful$waiting),"eruptions"])
+
+# conversion to minutes
+faithful$eruptions_m <- faithful$eruptions/60
+faithful$waiting_m <- faithful$waiting/60
+head(faithful)
+
+plot(faithful$eruptions, faithful$waiting,
+ main = "Eruption Time vs Waiting Time",
+ xlab = "Eruptions (min)",
+ ylab = "Waiting (min)")
+```
+
+
+
+```{python, python.reticulate = FALSE}
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+faithful=pd.read_csv("https://vincentarelbundock.github.io/Rdatasets/csv/datasets/faithful.csv")
+
+print(faithful.head())
+
+# the standard deviation of the variable eruptions when waiting is less than the median
+print(np.std(faithful[faithful.waiting < np.median(faithful.waiting)].eruptions))
+
+# the standard deviation of the variable eruptions when waiting is greater than the median
+print(np.std(faithful[faithful.waiting > np.median(faithful.waiting)].eruptions))
+
+# conversion to minutes 
+faithful['eruptions_h'] = (faithful['eruptions']/60)
+faithful["waiting_h"] = (faithful["waiting"]/60)
+print(faithful.head())
+
+plt.scatter(faithful["waiting"],faithful["eruptions"])
+plt.title("Eruption Time vs Waiting Time")
+plt.xlabel("Eruptions (min)")
+plt.ylabel("Waiting (min)")
+plt.show()
+
+
+```
+
+
+![](/blog/2019-12-14-a-prespective-on-python_files/py.png)
+
+
+
