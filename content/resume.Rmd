@@ -1,0 +1,54 @@
+---
+title: "resume"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Brendan Panici
+
+Self-guided Undergraduate Researcher with positive work ethic and detailed
+knowledge of RNA-seq, blood disorders, and genetics. Exemplary academic
+record with well-developed organizational and time management skills.
+Trained in lab techniques, R, and python.
+
+# Work History
+
+##Undergraduate Researcher - Dry Lab
+###Cenik Lab 10/2018-Current
+Lead processing and analysis for RNA-seq data to
+investigate a rare disease, Diamond-Blackfan Anemia.
+Discovered differential expressed genes in carriers of
+Diamond-Blackfan Anemia that might explain associated
+phenotype.
+Developed programming skills in R and Linux. As well as
+software documentation and management skills,
+including Git.
+Participated in regular meetings to discuss aspects of
+research and experiments.
+Presentation and data visualization.
+
+##Undergraduate Researcher
+###Freshman Research Initiative - "Bugs In Bugs" 1/2017 - 12/2017
+Field experience in identification and handling of bees.
+Developed molecular techniques such as pipetting,
+dilutions, microbe handling under sterile conditions,
+media prep, and PCR.
+Discovered preliminary evidence of a pathogen,
+Crithidia, in solitary bees.
+Developed top-level skills in collaboration, interpersonal
+communication and writing as result of hands-on work
+and training.
+
+##Bachelor of Science: Biology - Genetics And Genomics
+###University of Texas At Austin - Austin, TX 2016 - 2020
+Received Kemp-Forman Memorial Unrestricted Endowed
+Presidential Scholarship
+Certificate in computer programming
+Coursework: organic chemistry (1-2) , immunology,
+immunology laboratory, molecular genetics and
+medicine, tumor biology, genetics laboratory, and
+bioinformatics.
+3.87 GPA

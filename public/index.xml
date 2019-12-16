@@ -49,5 +49,15 @@
 IntroductionThe thoracic surgery dataset contains a 17 descriptors for patients that underwent lung surgery for cancer in Poland between 2007 and 2011. There are 3 numeric variable forced vital capacity (FVC)(the total amount of air exhaled during the FEV test), FEV1 (the amount of air you can force from your lungs in one second), and age. The data set also contains 11 binary variables of which most are secondary phenotypes, such as smoking status.</description>
     </item>
     
+    <item>
+      <title>resume</title>
+      <link>/resume/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/resume/</guid>
+      <description>Brendan PaniciSelf-guided Undergraduate Researcher with positive work ethic and detailed knowledge of RNA-seq, blood disorders, and genetics. Exemplary academic record with well-developed organizational and time management skills. Trained in lab techniques, R, and python.
+Work HistoryUndergraduate Researcher - Dry LabCenik Lab 10/2018-CurrentLead processing and analysis for RNA-seq data to investigate a rare disease, Diamond-Blackfan Anemia. Discovered differential expressed genes in carriers of Diamond-Blackfan Anemia that might explain associated phenotype.</description>
+    </item>
+    
   </channel>
 </rss>
